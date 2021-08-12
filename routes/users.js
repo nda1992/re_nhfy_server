@@ -39,11 +39,11 @@ router.post("/register",async (req,res,next)=>{
 
 //用户登录
 router.post("/login",async (req,res,next)=>{
-  const {userCode,password} = req.body;
-  if(!userCode||!password){
+  const {username,password} = req.body;
+  if(!username||!password){
     res.json({code:201,msg:"用户名或密码不能为空,登录失败"})
   }else{
-    await User(sequelize,DataTypes).findOne({where:{userCode:userCode}}).then(async result=>{
+    await User(sequelize,DataTypes).findOne({where:{userCode:username}}).then(async result=>{
       if(!result){
         res.json({code:202,msg:"用户不存在,请先注册"})
       }else{
@@ -55,8 +55,8 @@ router.post("/login",async (req,res,next)=>{
           let {loginNum} = result;
           loginNum++;
           result.loginNum=loginNum;
-          await User(sequelize,DataTypes).update({loginNum: loginNum},{where:{userCode:userCode}}).then(result1=>{
-            res.json({code:200,msg:"登录成功",token:token,userCode:result.userCode})
+          await User(sequelize,DataTypes).update({loginNum: loginNum},{where:{userCode:username}}).then(result1=>{
+            res.json({code:200,msg:"登录成功",data:{token:token,userCode:result.userCode}})
           })
         }else{
           res.json({code:203,msg:"密码错误,登录失败"})
@@ -89,14 +89,18 @@ router.post("/updatePasswd",async (req,res,next)=>{
 //登录成功后，携带token拉取用户的信息
 router.get("/info",async (req,res,next)=>{
   const {userCode} = req.query
+  console.log(userCode)
   await User(sequelize,DataTypes).findOne({where:{userCode:userCode}}).then(result=>{
     if(result){
-
-      res.json({code:200,msg:'获取用户信息成功',info:result})
+      res.json({code:200,msg:'获取用户信息成功',data:{usercode:result.userCode,avatar:"http://localhost:3000/images/avatar/defaultImg.png",deptname:"科技部"}})
     }else{
       res.json({code:201,msg:'获取用户信息失败'})
     }
   })
+})
+
+router.post('/logout',(req,res,next)=>{
+  res.json({code:200,msg:"logout"})
 })
 
 module.exports = router;

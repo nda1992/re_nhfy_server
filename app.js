@@ -17,6 +17,15 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
+//配置跨域
+app.all('*',(req,res,next)=>{
+  res.header('Access-Control-Allow-Origin', '*');
+  //Access-Control-Allow-Headers ,可根据浏览器的F12查看,把对应的粘贴在这里就行
+  res.header('Access-Control-Allow-Headers', 'Content-Type,uuid,token');  //添加uuid,token，设置自定义的请求头
+  res.header('Access-Control-Allow-Methods', '*');
+  res.header('Content-Type', 'application/json;charset=utf-8');
+  next();
+});
 //所有进来的请求都需要携带token
 app.use((req,res,next)=>{
   let url = req.url
@@ -25,24 +34,15 @@ app.use((req,res,next)=>{
     return next()
   }
   let token = req.headers.token
+  console.log(req.headers)
   let result = varifyToken(token)
-  if(result===606){
+  if(result.code==='606'){
     res.json(result)
   }else{
-    req.resToken=result
+    // req.resToken=result
     return next()
   }
 })
-
-//配置跨域
-app.all('*',(req,res,next)=>{
-  res.header('Access-Control-Allow-Origin', '*');
-  //Access-Control-Allow-Headers ,可根据浏览器的F12查看,把对应的粘贴在这里就行
-  res.header('Access-Control-Allow-Headers', 'Content-Type,uuid');  //添加uuid，设置自定义的请求头
-  res.header('Access-Control-Allow-Methods', '*');
-  res.header('Content-Type', 'application/json;charset=utf-8');
-  next();
-});
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 
