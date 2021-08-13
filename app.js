@@ -1,11 +1,13 @@
-var createError = require('http-errors');
-var express = require('express');
-var path = require('path');
-var cookieParser = require('cookie-parser');
-var logger = require('morgan');
-var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
-var app = express();
+const createError = require('http-errors');
+const express = require('express');
+const path = require('path');
+const cookieParser = require('cookie-parser');
+const logger = require('morgan');
+const indexRouter = require('./routes/index');
+const usersRouter = require('./routes/users');
+const reportMakeRouter = require('./routes/reportmake')
+const app = express();
+
 const {varifyToken} = require('./utils/token')
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -23,6 +25,7 @@ app.all('*',(req,res,next)=>{
   //Access-Control-Allow-Headers ,可根据浏览器的F12查看,把对应的粘贴在这里就行
   res.header('Access-Control-Allow-Headers', 'Content-Type,uuid,token');  //添加uuid,token，设置自定义的请求头
   res.header('Access-Control-Allow-Methods', '*');
+  res.header('Access-Control-Allow-Credentials','true');
   res.header('Content-Type', 'application/json;charset=utf-8');
   next();
 });
@@ -34,10 +37,9 @@ app.use((req,res,next)=>{
     return next()
   }
   let token = req.headers.token
-  console.log(req.headers)
   let result = varifyToken(token)
-  if(result.code==='606'){
-    res.json(result)
+  if(!result){
+    res.json({code:201,msg:'token验证失败'})
   }else{
     // req.resToken=result
     return next()
@@ -45,6 +47,7 @@ app.use((req,res,next)=>{
 })
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
+app.use('/reportmake',reportMakeRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

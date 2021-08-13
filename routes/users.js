@@ -5,7 +5,6 @@ const Token = require("../models/token")
 const {createToken} = require('../utils/token')
 const {DataTypes} = require('sequelize')
 const sequelize = require('../database/connection')
-const jwt = require('jsonwebtoken')
 const saltPasswd = require('../utils/saltPasswd')
 const comparePasswd = require('../utils/saltPasswd')
 //用户注册
@@ -89,7 +88,6 @@ router.post("/updatePasswd",async (req,res,next)=>{
 //登录成功后，携带token拉取用户的信息
 router.get("/info",async (req,res,next)=>{
   const {userCode} = req.query
-  console.log(userCode)
   await User(sequelize,DataTypes).findOne({where:{userCode:userCode}}).then(result=>{
     if(result){
       res.json({code:200,msg:'获取用户信息成功',data:{usercode:result.userCode,avatar:"http://localhost:3000/images/avatar/defaultImg.png",deptname:"科技部"}})
