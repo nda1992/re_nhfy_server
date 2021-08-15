@@ -1,7 +1,11 @@
 const express = require('express');
 const router = express.Router();
+const multer = require('multer')
+const path = require('path');
+const fs = require('fs');
 const User = require("../models/user")
 const Token = require("../models/token")
+const Avatar = require("../models/avatar")
 const {createToken} = require('../utils/token')
 const {DataTypes} = require('sequelize')
 const sequelize = require('../database/connection')
@@ -14,7 +18,7 @@ router.post("/register",async (req,res,next)=>{
   const regCode="nhfy@123";
   //注册成功后默认点击次数为0
   const loginNum=0;
-  const role = "普通用户" //默认角色
+  const role = "common" //默认角色
   //对密码进行加密
   const hash = await saltPasswd.saltPasswd(data.password)
   await User(sequelize,DataTypes).findOne({where:{userCode:data.userCode}}).then(async result=>{
@@ -46,6 +50,7 @@ router.post("/login",async (req,res,next)=>{
       if(!result){
         res.json({code:202,msg:"用户不存在,请先注册"})
       }else{
+        console.log(result)
         //密码对比
         const hash = await comparePasswd.comparePasswd(password,result.password)
         if(hash){
@@ -55,7 +60,7 @@ router.post("/login",async (req,res,next)=>{
           loginNum++;
           result.loginNum=loginNum;
           await User(sequelize,DataTypes).update({loginNum: loginNum},{where:{userCode:username}}).then(result1=>{
-            res.json({code:200,msg:"登录成功",data:{token:token,userCode:result.userCode}})
+            res.json({code:200,msg:"登录成功",data:{token:token,userCode:result.userCode,username:result.username,role:result.role}})
           })
         }else{
           res.json({code:203,msg:"密码错误,登录失败"})
@@ -88,9 +93,16 @@ router.post("/updatePasswd",async (req,res,next)=>{
 //登录成功后，携带token拉取用户的信息
 router.get("/info",async (req,res,next)=>{
   const {userCode} = req.query
-  await User(sequelize,DataTypes).findOne({where:{userCode:userCode}}).then(result=>{
+  await User(sequelize,DataTypes).findOne({where:{userCode:userCode}}).then(async result=>{
     if(result){
-      res.json({code:200,msg:'获取用户信息成功',data:{usercode:result.userCode,avatar:"http://localhost:3000/images/avatar/defaultImg.png",deptname:"科技部"}})
+      await Avatar(sequelize,DataTypes).findOne({where:{userCode:result.userCode}}).then(avatar=>{
+        if(avatar){
+          res.json({code:200,msg:'获取用户信息成功',data:{usercode:result.userCode,avatar:avatar.url,deptname:"科技部",name:result.username}})
+        }else{
+          res.json({code:200,msg:'获取用户信息成功',data:{usercode:result.userCode,avatar:"http://localhost:3000/images/avatar/defaultImg.png",deptname:"科技部",name:result.username}})
+        }
+      })
+      
     }else{
       res.json({code:201,msg:'获取用户信息失败'})
     }
@@ -99,6 +111,41 @@ router.get("/info",async (req,res,next)=>{
 
 router.post('/logout',(req,res,next)=>{
   res.json({code:200,msg:"logout"})
+})
+
+//处理用户头像上传
+const pathname = path.join(__dirname,'../public/images/avatar')
+const storage = multer.diskStorage({
+  destination:(req,file,cb)=>{
+    cb(null,pathname)
+  },
+  filename:(req,file,cb)=>{
+    const ext = path.extname(file.originalname)
+    const uuid = req.headers.uuid
+    const fullPath = uuid+ext
+    cb(null,fullPath)
+  }
+})
+const uploader = multer({storage:storage})
+router.post('/uploadAvatar',uploader.single('file'),async (req,res,next)=>{
+  const avatarPath = 'http://localhost:3000/images/avatar/'
+  const {userCode,avatar}= req.body
+  const filename = req.file.originalname
+  const uuid = req.headers.uuid
+  const currentfileName =avatarPath+uuid+path.extname(filename)
+  const [avatarImg,created] = await Avatar(sequelize,DataTypes).findOrCreate({where:{userCode:userCode},default:{url:currentfileName,userCode:userCode}})
+  // console.log(avatarImg,created)
+  if(!created){
+    Avatar(sequelize,DataTypes).update({url:currentfileName,userCode:userCode},{where:{userCode:userCode}})
+  }
+  // console.log(req.file)
+  const originfileName = avatar.split("\/").slice(-1)
+  if(originfileName[0]!=="defaultImg.png"){  //默认头像不要删除
+    const FILE_PATH=path.join(__dirname,`../public/images/avatar/${originfileName}`)
+    fs.unlink(FILE_PATH,()=>{console.log('删除图片成功')})
+  }
+  res.json({code:200,msg:"头像上传成功",avatar:currentfileName})
+  // res.json({code:200,msg:"uploadAvatar"})
 })
 
 module.exports = router;
