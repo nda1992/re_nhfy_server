@@ -8,6 +8,7 @@ const usersRouter = require('./routes/users');
 const hospitalRouter = require('./routes/hospital/hospital');
 const reportMakeRouter = require('./routes/reportmake')
 const reportRouter = require('./routes/report/report')
+const newsRouter = require('./routes/news/news')
 const app = express();
 
 const {varifyToken} = require('./utils/token')
@@ -52,6 +53,7 @@ app.use('/users', usersRouter);
 app.use('/reportmake',reportMakeRouter);
 app.use('/hospital',hospitalRouter);
 app.use('/report',reportRouter)
+app.use('/news',newsRouter);
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
   next(createError(404));
