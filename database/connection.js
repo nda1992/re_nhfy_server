@@ -12,7 +12,8 @@ const sequelize = new Sequelize(
             "charset":"utf8",
             'collate':'utf8_general_ci',
             'timestamps':true
-        }
-    }
+        }, 
+        timezone: '+08:00'
+    },
 );
 module.exports=sequelize;

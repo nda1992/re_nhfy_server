@@ -20,8 +20,11 @@ module.exports = (sequelize, DataTypes) => {
     deptName: DataTypes.STRING,
     createTime: DataTypes.DATE,
     category: DataTypes.STRING,
+    status: DataTypes.STRING,
+    newsStatus: DataTypes.INTEGER,
+    type: DataTypes.INTEGER,
     clickNum: DataTypes.INTEGER,
-    statue: DataTypes.INTEGER,
+    plateform: DataTypes.INTEGER
   }, {
     sequelize,
     modelName: 'News',
