@@ -83,10 +83,9 @@ router.get('/searchDept',async (req,res,next)=>{
 
 // 发布文章
 router.post('/releaseNews',async (req,res,next)=>{
-    const { author, status, title, content, display_time, platforms, category, deptName, type, role, newsStatus, image_uri } = req.body
+    const { id, author, status, title, content, display_time, platforms, category, deptName, type, role, newsStatus, loginuserCode } = req.body
     // console.log(req.body)
     // console.log(req.headers)
-    // console.log(image_uri)
     if(role!=='admin'){
         res.json({code:404,msg:"您没有权限发布新闻"})
     }else{
@@ -99,20 +98,84 @@ router.post('/releaseNews',async (req,res,next)=>{
         }else{
             plateform=3
         }
-        await News(sequelize,DataTypes).create({title:title,content:content,userName:author,deptName:deptName,createTime:moment(display_time).format('YYYY-MM-DD HH:mm:ss'),category:category,clickNum:0,status:status,type:type,newsStatus:newsStatus,plateform:plateform}).then((result)=>{
-            if(result){
-                res.json({code:200,msg:"新闻发表成功"})
+        await News(sequelize,DataTypes).findOne({where: {id:id}}).then(async item=>{
+            //不存在，则创建新纪录
+            if(!item){
+                await News(sequelize,DataTypes).create({title:title,content:content,userName:author,deptName:deptName,createTime:moment(display_time).format('YYYY-MM-DD HH:mm:ss'),category:category,clickNum:0,status:status,type:type,newsStatus:newsStatus,plateform:plateform,loginuserCode:loginuserCode}).then((result)=>{
+                    if(result){
+                        res.json({code:200,msg:"新闻发表成功"})
+                    }else{
+                        res.json({code:201,msg:"新闻发表失败"})
+                    }
+                })
             }else{
-                res.json({code:201,msg:"新闻发表失败"})
+                //存在记录，则进行更新
+                await News(sequelize,DataTypes).update({title:title,content:content,userName:author,deptName:deptName,createTime:moment(display_time).format('YYYY-MM-DD HH:mm:ss'),category:category,clickNum:0,status:status,type:type,newsStatus:newsStatus,plateform:plateform,loginuserCode:loginuserCode},{where:{id:id}}).then(result=>{
+                    if(result){
+                        res.json({code:200,msg:"新闻更新成功"})
+                    }else{
+                        res.json({code:202,msg:"新闻发表失败"})
+                    }
+                })
             }
         })
     }
 })
-// 文章保存为草稿
-// router.post('/saveDraft',async (req,res,next)=>{
-//     const data = req.body
 
-// })
+// 无条件获取文章草稿标题
+router.get('/getDraftList',async (req,res,next)=>{
+    const data = req.query
+    const type = 2
+    console.log(data)
+    if (data.role!=='admin') {
+        res.json({code:201,msg:'您没有权限获取内容'})
+    }else{
+        await News(sequelize,DataTypes).findAll({where: {type:type,loginuserCode:data.loginuserCode}}).then(result=>{
+            if(result){
+                res.json({code:200,msg:'获取内容成功',items:result})
+            }else{
+                res.json({code:202,msg:'获取内容失败'})
+            }
+        })
+    }
+})
+
+
+// 根据新闻id查询草稿
+router.get('/getDraftByTitle',async (req,res,next)=>{
+    const data = req.query
+    await News(sequelize,DataTypes).findOne({where: {id: data.id}}).then(result=>{
+        if(result){
+            res.json({code:200,msg:'数据获取成功',result:result})
+        }else{
+            res.json({code:201,msg:'数据获取失败'})
+        }
+    })
+})
+
+
+// 获取所有文章记录
+router.get('/getnewsList',async (req,res,next)=>{
+    const { role, limit, page } = req.query
+    if(role!=='admin'){
+        res.json({code:201,msg:"您没有权限访问该页面"})
+    }else{
+        await News(sequelize,DataTypes).findAll().then(result=>{
+            if(result){
+                let news = result.map(e => {
+                    let timeTemp = moment(e.createTime).format('YYYY-MM-DD HH:mm:ss')
+                    let newstatus = e.status === 'draft' ? '草稿' : '已发布'
+                    return { id:e.id, title:e.title, content:e.content,createTime:timeTemp,type:e.type,newsStatus:e.newsStatus,userName:e.userName,deptName:e.deptName,clickNum:e.clickNum,status:newstatus,plateform:e.plateform,category:e.category}
+                })
+                const pageList =news.filter((item,index)=>index < limit * page && index >= limit * (page - 1))
+                res.json({code:200,msg:'获取新闻成功',items:pageList,total:news.length})
+            }else{
+                res.json({code:201,msg:'获取数据失败'})
+            }
+        })
+    }
+})
+
 
 // 文章图片上传
 const filePath = path.join(__dirname,'../../public/images/news')

@@ -24,7 +24,8 @@ module.exports = (sequelize, DataTypes) => {
     newsStatus: DataTypes.INTEGER,
     type: DataTypes.INTEGER,
     clickNum: DataTypes.INTEGER,
-    plateform: DataTypes.INTEGER
+    plateform: DataTypes.INTEGER,
+    loginuserCode: DataTypes.STRING //当前登录的用户号
   }, {
     sequelize,
     modelName: 'News',
