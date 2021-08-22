@@ -125,7 +125,7 @@ router.post('/releaseNews',async (req,res,next)=>{
 // 无条件获取文章草稿标题
 router.get('/getDraftList',async (req,res,next)=>{
     const data = req.query
-    const type = 2
+    const type = 1  // type=1：表示草稿
     console.log(data)
     if (data.role!=='admin') {
         res.json({code:201,msg:'您没有权限获取内容'})
@@ -142,7 +142,7 @@ router.get('/getDraftList',async (req,res,next)=>{
 
 
 // 根据新闻id查询草稿
-router.get('/getDraftByTitle',async (req,res,next)=>{
+router.get('/getDraftById',async (req,res,next)=>{
     const data = req.query
     await News(sequelize,DataTypes).findOne({where: {id: data.id}}).then(result=>{
         if(result){
@@ -163,14 +163,84 @@ router.get('/getnewsList',async (req,res,next)=>{
         await News(sequelize,DataTypes).findAll().then(result=>{
             if(result){
                 let news = result.map(e => {
+                    // 发布的平台
+                    let platformTemp = ''
+                    //审核状态
+                    let newsStatusTemp = ''
+                    //发布状态
+                    let statusTemp = ''
+                    //切换开关（审核通过=1，审核未通过=0）
+                    let Switch = ''
+                    //发布时间
                     let timeTemp = moment(e.createTime).format('YYYY-MM-DD HH:mm:ss')
-                    let newstatus = e.status === 'draft' ? '草稿' : '已发布'
-                    return { id:e.id, title:e.title, content:e.content,createTime:timeTemp,type:e.type,newsStatus:e.newsStatus,userName:e.userName,deptName:e.deptName,clickNum:e.clickNum,status:newstatus,plateform:e.plateform,category:e.category}
+                    
+                    if (e.newsStatus===1&&e.status==='published'){
+                        newsStatusTemp = '已审核'
+                        statusTemp = '已发布'
+                        Switch=true
+                    }else if (e.newsStatus===2&&e.status==='published'){
+                        newsStatusTemp='未审核'
+                        statusTemp = '未发布'
+                        Switch=false
+                    }else if(e.newsStatus===3&&e.status==='published'){
+                        statusTemp = '未发布'
+                        newsStatusTemp='不通过'
+                        Switch=false
+                    }else if(e.newsStatus===4){
+                        statusTemp = '草稿'
+                        newsStatusTemp='草稿'
+                        Switch=false
+                    }else{
+                        newsStatusTemp='已删除'
+                        statusTemp='已删除'
+                        Switch=0
+                    }
+                    // 发布的平台
+                    if(e.plateform===1){
+                        platformTemp = ['院内网站']
+                    }else if(e.plateform===2){
+                        platformTemp = ['院外网站']
+                    }else{
+                        platformTemp = ['院内网站','院外网站']
+                    }
+                    return { id:e.id, title:e.title, content:e.content,createTime:timeTemp,type:e.type,newsStatus:newsStatusTemp,userName:e.userName,deptName:e.deptName,clickNum:e.clickNum,status:statusTemp,platforms:platformTemp,category:e.category,Switch:Switch}
                 })
                 const pageList =news.filter((item,index)=>index < limit * page && index >= limit * (page - 1))
                 res.json({code:200,msg:'获取新闻成功',items:pageList,total:news.length})
             }else{
                 res.json({code:201,msg:'获取数据失败'})
+            }
+        })
+    }
+})
+
+// 根据switch的值更新文章的发表状态
+router.post('/updateNewsStatus',async (req,res,next)=>{
+    const { id, role, Switch } = req.body
+    console.log(id)
+    console.log(Switch)
+    // 审核通过
+    if(Switch){
+        const newsStatusTemp = 1
+        const statusTemp = 'published'
+        await News(sequelize,DataTypes).update({newsStatus:newsStatusTemp,status:statusTemp},{where:{id:id}}).then(result=>{
+            if(result){
+                console.log(result)
+                res.json({code:200,msg:"更新成功"})
+            }else{
+                res.json({code:201,msg:"更新失败"})
+            }
+        })
+    // 审核未通过
+    }else{
+        const newsStatusTemp = 3
+        const statusTemp = 'published'
+        await News(sequelize,DataTypes).update({newsStatus:newsStatusTemp},{where:{id:id}}).then(result=>{
+            if(result){
+                console.log(result)
+                res.json({code:200,msg:"更新成功"})
+            }else{
+                res.json({code:201,msg:"更新失败"})
             }
         })
     }
