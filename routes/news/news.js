@@ -98,27 +98,51 @@ router.post('/releaseNews',async (req,res,next)=>{
         }else{
             plateform=3
         }
-        await News(sequelize,DataTypes).findOne({where: {id:id}}).then(async item=>{
-            //不存在，则创建新纪录
-            if(!item){
-                await News(sequelize,DataTypes).create({title:title,content:content,userName:author,deptName:deptName,createTime:moment(display_time).format('YYYY-MM-DD HH:mm:ss'),category:category,clickNum:0,status:status,type:type,newsStatus:newsStatus,plateform:plateform,loginuserCode:loginuserCode}).then((result)=>{
+        // 保存为草稿
+        if(type===1){
+            // SQL的注释：如果status=publised,说明该条记录不是草稿，如果用户将不是草稿的记录保存为草稿，也需要创建一条新记录
+            // 表示该条记录是草稿，则进行更新
+            if(status==='draft'){
+                await News(sequelize,DataTypes).update({title:title,content:content,userName:author,deptName:deptName,createTime:moment(display_time).format('YYYY-MM-DD HH:mm:ss'),category:category,clickNum:0,status:'draft',type:type,newsStatus:newsStatus,plateform:plateform,loginuserCode:loginuserCode},{where:{id:id,status:status}}).then(result=>{
                     if(result){
-                        res.json({code:200,msg:"新闻发表成功"})
+                        res.json({code:200,msg:"草稿更新成功"})
                     }else{
-                        res.json({code:201,msg:"新闻发表失败"})
+                        res.json({code:202,msg:"草稿发表失败"})
                     }
                 })
             }else{
-                //存在记录，则进行更新
-                await News(sequelize,DataTypes).update({title:title,content:content,userName:author,deptName:deptName,createTime:moment(display_time).format('YYYY-MM-DD HH:mm:ss'),category:category,clickNum:0,status:status,type:type,newsStatus:newsStatus,plateform:plateform,loginuserCode:loginuserCode},{where:{id:id}}).then(result=>{
+                await News(sequelize,DataTypes).create({title:title,content:content,userName:author,deptName:deptName,createTime:moment(display_time).format('YYYY-MM-DD HH:mm:ss'),category:category,clickNum:0,status:'draft',type:type,newsStatus:newsStatus,plateform:plateform,loginuserCode:loginuserCode}).then((result)=>{
                     if(result){
-                        res.json({code:200,msg:"新闻更新成功"})
+                        res.json({code:200,msg:"草稿创建成功"})
                     }else{
-                        res.json({code:202,msg:"新闻发表失败"})
+                        res.json({code:201,msg:"草稿创建失败"})
                     }
                 })
             }
-        })
+        }else{
+            // 发表文章
+            await News(sequelize,DataTypes).findOne({where: {id:id}}).then(async item=>{
+                //不存在，则创建新纪录
+                if(!item){
+                    await News(sequelize,DataTypes).create({title:title,content:content,userName:author,deptName:deptName,createTime:moment(display_time).format('YYYY-MM-DD HH:mm:ss'),category:category,clickNum:0,status:status,type:type,newsStatus:newsStatus,plateform:plateform,loginuserCode:loginuserCode}).then((result)=>{
+                        if(result){
+                            res.json({code:200,msg:"新闻发表成功"})
+                        }else{
+                            res.json({code:201,msg:"新闻发表失败"})
+                        }
+                    })
+                }else{
+                    //存在记录，则进行更新
+                    await News(sequelize,DataTypes).update({title:title,content:content,userName:author,deptName:deptName,createTime:moment(display_time).format('YYYY-MM-DD HH:mm:ss'),category:category,clickNum:0,status:status,type:type,newsStatus:newsStatus,plateform:plateform,loginuserCode:loginuserCode},{where:{id:id}}).then(result=>{
+                        if(result){
+                            res.json({code:200,msg:"新闻更新成功"})
+                        }else{
+                            res.json({code:202,msg:"新闻发表失败"})
+                        }
+                    })
+                }
+            })
+        }
     }
 })
 
@@ -126,7 +150,7 @@ router.post('/releaseNews',async (req,res,next)=>{
 router.get('/getDraftList',async (req,res,next)=>{
     const data = req.query
     const type = 1  // type=1：表示草稿
-    console.log(data)
+    // console.log(data)
     if (data.role!=='admin') {
         res.json({code:201,msg:'您没有权限获取内容'})
     }else{
@@ -217,15 +241,15 @@ router.get('/getnewsList',async (req,res,next)=>{
 // 根据switch的值更新文章的发表状态
 router.post('/updateNewsStatus',async (req,res,next)=>{
     const { id, role, Switch } = req.body
-    console.log(id)
-    console.log(Switch)
+    // console.log(id)
+    // console.log(Switch)
     // 审核通过
     if(Switch){
         const newsStatusTemp = 1
         const statusTemp = 'published'
         await News(sequelize,DataTypes).update({newsStatus:newsStatusTemp,status:statusTemp},{where:{id:id}}).then(result=>{
             if(result){
-                console.log(result)
+                // console.log(result)
                 res.json({code:200,msg:"更新成功"})
             }else{
                 res.json({code:201,msg:"更新失败"})
@@ -237,13 +261,25 @@ router.post('/updateNewsStatus',async (req,res,next)=>{
         const statusTemp = 'published'
         await News(sequelize,DataTypes).update({newsStatus:newsStatusTemp},{where:{id:id}}).then(result=>{
             if(result){
-                console.log(result)
+                // console.log(result)
                 res.json({code:200,msg:"更新成功"})
             }else{
                 res.json({code:201,msg:"更新失败"})
             }
         })
     }
+})
+
+// 根据id删除文章
+router.delete('/deleteNewsById',async (req,res,next)=>{
+    const {id} = req.query
+    await News(sequelize,DataTypes).destroy({where:{id:id}}).then(result=>{
+        if(result){
+            res.json({code:200,msg:'删除成功'})
+        }else{
+            res.json({code:201,msg:'删除失败'})
+        }
+    })
 })
 
 
@@ -265,7 +301,7 @@ router.post('/upload',uploader.array('file'),(req,res,next)=>{
     // const fileName = req.files.originalname
     // const currentFileName = imgOrigin+uuid+path.extname(fileName)
     const files = req.files
-    console.log(files)
+    // console.log(files)
     let temp = files.map(e=>{
         const uuid = uuidv4()
         let basename = path.basename(e.path)    //源文件名
