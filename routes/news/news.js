@@ -150,7 +150,6 @@ router.post('/releaseNews',async (req,res,next)=>{
 router.get('/getDraftList',async (req,res,next)=>{
     const data = req.query
     const type = 1  // type=1：表示草稿
-    // console.log(data)
     if (data.role!=='admin') {
         res.json({code:201,msg:'您没有权限获取内容'})
     }else{
@@ -198,15 +197,15 @@ router.get('/getnewsList',async (req,res,next)=>{
                     //发布时间
                     let timeTemp = moment(e.createTime).format('YYYY-MM-DD HH:mm:ss')
                     
-                    if (e.newsStatus===1&&e.status==='published'){
+                    if (e.newsStatus===1 && e.status==='published'){
                         newsStatusTemp = '已审核'
                         statusTemp = '已发布'
                         Switch=true
-                    }else if (e.newsStatus===2&&e.status==='published'){
+                    }else if (e.newsStatus===2 && e.status==='published'){
                         newsStatusTemp='未审核'
                         statusTemp = '未发布'
                         Switch=false
-                    }else if(e.newsStatus===3&&e.status==='published'){
+                    }else if(e.newsStatus===3 && e.status==='published'){
                         statusTemp = '未发布'
                         newsStatusTemp='不通过'
                         Switch=false
@@ -316,4 +315,40 @@ router.post('/upload',uploader.array('file'),(req,res,next)=>{
     })
     res.json({errno:0,files:temp})
 })
+
+
+
+/****************处理xls、xlsx、doc和docx文件的上传************************/ 
+const ExcelfilePath = path.join(__dirname,'../../public/files')
+const Filestorage = multer.diskStorage({
+    destination: (req,file,cb)=>{
+        cb(null,ExcelfilePath)
+    }, 
+    filename: (req,file,cb)=>{
+        const filename = file.originalname
+        cb(null,filename)
+    }
+})
+const Fileuploader = multer({storage:Filestorage})
+
+router.post('/uploadFile',Fileuploader.array('file'), async (req,res,next)=>{
+    // 文件的保存路径
+    const fileOriginPath = path.join(__dirname,'../../public/files/')
+    // 访问文件的URL
+    const fileUrl = 'http://localhost:3000/files/'
+    const files = req.files
+    const FileArr = files.map(e => {
+        const uuid = uuidv4()
+        let basename = path.basename(e.path)
+        let suffix = path.extname(e.path) 
+        let newname = uuid+suffix
+        fs.rename(fileOriginPath+basename,fileOriginPath+newname,err=>{
+            // console.log(err)
+        })
+        return {file:fileUrl+newname}
+    })
+    res.json({code:200,files:FileArr,msg:'文件上传成功'})
+    // res.json({code: 200,msg:'success'})
+})
+
 module.exports = router
