@@ -6,8 +6,9 @@ const fs = require('fs');
 const User = require("../models/user")
 const Token = require("../models/token")
 const Avatar = require("../models/avatar")
+const Dept = require('../models/dept')
 const {createToken} = require('../utils/token')
-const {DataTypes} = require('sequelize')
+const {DataTypes, Op} = require('sequelize')
 const sequelize = require('../database/connection')
 const saltPasswd = require('../utils/saltPasswd')
 const comparePasswd = require('../utils/saltPasswd')
@@ -39,6 +40,25 @@ router.post("/register",async (req,res,next)=>{
     }
   })
 });
+
+
+// 用户注册时，远程获取科室名称
+router.post('/searchDept',async (req,res,next)=>{
+  const data = req.body
+  let obj = []
+  await Dept(sequelize,DataTypes).findAll({where: {deptName:{[Op.like]:`%${data.keyword}%`}}}).then(result=>{
+      if(result){
+          result.forEach(e=>{
+              let temp = {}
+              temp.name = e.deptName
+              obj.push(temp)
+          })
+          res.json({code:200,items:obj})
+      }else{
+          res.json({code:201,items:'查询失败'})
+      }
+  })
+})
 
 //用户登录
 router.post("/login",async (req,res,next)=>{

@@ -13,7 +13,7 @@ router.post('/addDept',async (req,res,next)=>{
     const { deptName,deptCode,deptAddr,deptLeader,desc,level } = req.body
     await Dept(sequelize,DataTypes).findOne({where:{deptcode:deptCode}}).then(async result=>{
         if(result){
-            res.json({code:201,msg:"error,该部门编号已经存在"})
+            res.json({code:201,msg:"该部门编号已经存在,请输入唯一的部门编号值"})
         }else{
             await Dept(sequelize,DataTypes).create({deptName:deptName,deptCode:deptCode,deptAddr:deptAddr,deleteBit:1,deptLeader:deptLeader,desc:desc,level:level}).then(result=>{
                 if(result){
