@@ -126,7 +126,7 @@ router.post('/releaseNews',async (req,res,next)=>{
                 if(!item){
                     await News(sequelize,DataTypes).create({title:title,content:content,userName:author,deptName:deptName,createTime:moment(display_time).format('YYYY-MM-DD HH:mm:ss'),category:category,clickNum:0,status:status,type:type,newsStatus:newsStatus,plateform:plateform,loginuserCode:loginuserCode}).then((result)=>{
                         if(result){
-                            res.json({code:200,msg:"新闻发表成功"})
+                            res.json({code:200,msg:"新闻提交成功，等待审核"})
                         }else{
                             res.json({code:201,msg:"新闻发表失败"})
                         }
@@ -135,7 +135,7 @@ router.post('/releaseNews',async (req,res,next)=>{
                     //存在记录，则进行更新
                     await News(sequelize,DataTypes).update({title:title,content:content,userName:author,deptName:deptName,createTime:moment(display_time).format('YYYY-MM-DD HH:mm:ss'),category:category,clickNum:0,status:status,type:type,newsStatus:newsStatus,plateform:plateform,loginuserCode:loginuserCode},{where:{id:id}}).then(result=>{
                         if(result){
-                            res.json({code:200,msg:"新闻更新成功"})
+                            res.json({code:200,msg:"新闻提交成功，等待审核"})
                         }else{
                             res.json({code:202,msg:"新闻发表失败"})
                         }
@@ -267,6 +267,24 @@ router.post('/updateNewsStatus',async (req,res,next)=>{
             }
         })
     }
+})
+
+// 根据文章id浏览
+router.get('/ScanById',async (req,res,next)=>{
+    const { id, role } = req.query
+    await News(sequelize,DataTypes).findOne({where:{id:id}}).then(async item => {
+        let num = item.clickNum // 更新浏览次数
+        num++
+        await News(sequelize,DataTypes).update({clickNum:num},{where:{id:id}}).then(async result1=>{
+            await News(sequelize,DataTypes).findOne({where:{id:id}}).then(result=>{
+                if(result){
+                    res.json({code:200,msg:'文章获取成功',item:result})
+                }else{
+                    res.json({code:201,msg:'文章获取失败'})
+                }
+            })
+        })
+    })
 })
 
 // 根据id删除文章

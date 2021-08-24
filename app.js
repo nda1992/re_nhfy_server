@@ -8,13 +8,8 @@ const usersRouter = require('./routes/users');
 const hospitalRouter = require('./routes/hospital/hospital');
 const reportRouter = require('./routes/report/report')
 const newsRouter = require('./routes/news/news')
-<<<<<<< HEAD
-// const reportmakeRouter = require('./routes/reportmake/reportmake')
-// const specialQueryRouter = require('./routes/reportmake/specialQuery')
-=======
 const reportmakeRouter = require('./routes/reportmake/reportmake')
 const specialQueryRouter = require('./routes/reportmake/specialQuery')
->>>>>>> 3c4c11309a541ca88c600adadbd43b17ea6dceb4
 const app = express();
 
 const {varifyToken} = require('./utils/token')
@@ -59,13 +54,8 @@ app.use('/users', usersRouter);
 app.use('/hospital',hospitalRouter);
 app.use('/report',reportRouter)
 app.use('/news',newsRouter);
-<<<<<<< HEAD
-// app.use('/reportmake',reportmakeRouter)
-// app.use('/reportmake/specialQuery',specialQueryRouter)
-=======
 app.use('/reportmake',reportmakeRouter)
 app.use('/reportmake/specialQuery',specialQueryRouter)
->>>>>>> 3c4c11309a541ca88c600adadbd43b17ea6dceb4
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
   next(createError(404));
