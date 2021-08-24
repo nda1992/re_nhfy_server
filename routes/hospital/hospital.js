@@ -46,7 +46,6 @@ router.get('/getdeptList',async (req,res,next)=>{
 //更新部门信息
 router.post('/updateDept',async (req,res,next)=>{
     const {id,deptCode,deptName,deptAddr,deptLeader,level,desc} = req.body
-    // console.log(req.body)
     await Dept(sequelize,DataTypes).findOne({where: {id:id}}).then(async dept=>{
         if(dept){
             await Dept(sequelize,DataTypes).update({deptCode:deptCode,deptName:deptName,deptAddr:deptAddr,deptLeader:deptLeader,level:level,desc:desc},{where:{id:id}}).then(result=>{

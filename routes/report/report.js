@@ -92,7 +92,6 @@ router.get('/medicalRevenue',(req,res,next)=>{
 //用户提交的反馈
 router.post('/usersAdvice',async (req,res,next)=>{
     const { userCode, content } = req.query
-    console.log(req.body)
     await Advice(sequelize,DataTypes).create({userCode:userCode,content:content}).then(result=>{
         if(result){
             res.json({code:200,msg:'提交成功，感谢您的反馈'})

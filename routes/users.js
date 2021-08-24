@@ -70,7 +70,6 @@ router.post("/login",async (req,res,next)=>{
       if(!result){
         res.json({code:202,msg:"用户不存在,请先注册"})
       }else{
-        console.log(result)
         //密码对比
         const hash = await comparePasswd.comparePasswd(password,result.password)
         if(hash){
@@ -154,11 +153,9 @@ router.post('/uploadAvatar',uploader.single('file'),async (req,res,next)=>{
   const uuid = req.headers.uuid
   const currentfileName =avatarPath+uuid+path.extname(filename)
   const [avatarImg,created] = await Avatar(sequelize,DataTypes).findOrCreate({where:{userCode:userCode},default:{url:currentfileName,userCode:userCode}})
-  // console.log(avatarImg,created)
   if(!created){
     Avatar(sequelize,DataTypes).update({url:currentfileName,userCode:userCode},{where:{userCode:userCode}})
   }
-  // console.log(req.file)
   const originfileName = avatar.split("\/").slice(-1)
   if(originfileName[0]!=="defaultImg.png"){  //默认头像不要删除
     const FILE_PATH=path.join(__dirname,`../public/images/avatar/${originfileName}`)

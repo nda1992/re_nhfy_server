@@ -84,8 +84,6 @@ router.get('/searchDept',async (req,res,next)=>{
 // 发布文章
 router.post('/releaseNews',async (req,res,next)=>{
     const { id, author, status, title, content, display_time, platforms, category, deptName, type, role, newsStatus, loginuserCode, currentRoute } = req.body
-    // console.log(req.body)
-    // console.log(req.headers)
     if(role!=='admin'){
         res.json({code:404,msg:"您没有权限发布新闻"})
     }else{
@@ -240,15 +238,12 @@ router.get('/getnewsList',async (req,res,next)=>{
 // 根据switch的值更新文章的发表状态
 router.post('/updateNewsStatus',async (req,res,next)=>{
     const { id, role, Switch } = req.body
-    // console.log(id)
-    // console.log(Switch)
     // 审核通过
     if(Switch){
         const newsStatusTemp = 1
         const statusTemp = 'published'
         await News(sequelize,DataTypes).update({newsStatus:newsStatusTemp,status:statusTemp},{where:{id:id}}).then(result=>{
             if(result){
-                // console.log(result)
                 res.json({code:200,msg:"更新成功"})
             }else{
                 res.json({code:201,msg:"更新失败"})
@@ -260,7 +255,6 @@ router.post('/updateNewsStatus',async (req,res,next)=>{
         const statusTemp = 'published'
         await News(sequelize,DataTypes).update({newsStatus:newsStatusTemp},{where:{id:id}}).then(result=>{
             if(result){
-                // console.log(result)
                 res.json({code:200,msg:"更新成功"})
             }else{
                 res.json({code:201,msg:"更新失败"})
@@ -318,13 +312,11 @@ router.post('/upload',uploader.array('file'),(req,res,next)=>{
     // const fileName = req.files.originalname
     // const currentFileName = imgOrigin+uuid+path.extname(fileName)
     const files = req.files
-    // console.log(files)
     let temp = files.map(e=>{
         const uuid = uuidv4()
         let basename = path.basename(e.path)    //源文件名
         let suffix = path.extname(e.path)       //文件后缀
         let newname = uuid+suffix               //新文件名
-        // console.log(newname)
         fs.rename(originpath+basename,originpath+newname,err=>{
             // console.log(err)
         })

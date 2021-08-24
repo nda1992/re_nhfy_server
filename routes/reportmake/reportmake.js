@@ -9,7 +9,6 @@ const moment = require('moment')
 // 定制报表标题
 router.post('/createTableTitle',async (req,res,next)=>{
     const data = req.query
-    console.log(data)
     await tableTitle(sequelize,DataTypes).create({title:data.title,desc:data.desc}).then(result=>{
         if(result){
             res.json({code:200,msg:'创建成功'})    
@@ -41,7 +40,6 @@ router.get('/getTableTitleList',async (req,res,next)=>{
 //更新表格标题
 router.post('/updateTableTitle',async (req,res,next)=>{
     const data = req.body
-    // console.log(data)
     if(data.role!=='admin'){
         res.json({code:201,msg:'您没有权限进行更新'})
     }else{
@@ -58,7 +56,6 @@ router.post('/updateTableTitle',async (req,res,next)=>{
 //删除表格标题
 router.delete('/deleteTableTitle',async (req,res,next)=>{
     const data = req.body
-    console.log(data)
     if(data.role!=='admin'){
         res.json({code:201,msg:'您没有权限删除'})
     }else{
