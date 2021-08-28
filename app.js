@@ -8,8 +8,10 @@ const usersRouter = require('./routes/users');
 const hospitalRouter = require('./routes/hospital/hospital');
 const reportRouter = require('./routes/report/report')
 const newsRouter = require('./routes/news/news')
-const reportmakeRouter = require('./routes/reportmake/reportmake')
-const specialQueryRouter = require('./routes/reportmake/specialQuery')
+const recruitRouter = require('./routes/recruit/recruit')
+const positionRouter = require('./routes/recruit/position')
+// const reportmakeRouter = require('./routes/reportmake/reportmake')
+// const specialQueryRouter = require('./routes/reportmake/specialQuery')
 const app = express();
 
 const {varifyToken} = require('./utils/token')
@@ -36,8 +38,10 @@ app.all('*',(req,res,next)=>{
 //所有进来的请求都需要携带token
 app.use((req,res,next)=>{
   let url = req.url
-  let whileUrl=['/users/login','/users/register','/news/upload','/users/searchDept']
-  if(whileUrl.indexOf(url)>=0){
+  const reg = '/recruit/getPositionList'
+  const trueUrl = url.search(reg)
+  let whileUrl=['/users/login','/users/register','/news/upload','/users/searchDept','/position/jobSeekerRegister']
+  if(whileUrl.indexOf(url) >= 0 || trueUrl !== -1){
     return next()
   }
   let token = req.headers.token
@@ -54,8 +58,10 @@ app.use('/users', usersRouter);
 app.use('/hospital',hospitalRouter);
 app.use('/report',reportRouter)
 app.use('/news',newsRouter);
-app.use('/reportmake',reportmakeRouter)
-app.use('/reportmake/specialQuery',specialQueryRouter)
+app.use('/recruit',recruitRouter);
+app.use('/position',positionRouter);
+// app.use('/reportmake',reportmakeRouter)
+// app.use('/reportmake/specialQuery',specialQueryRouter)
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
   next(createError(404));

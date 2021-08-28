@@ -226,7 +226,7 @@ router.get('/getnewsList',async (req,res,next)=>{
                     }
                     return { id:e.id, title:e.title, content:e.content,createTime:timeTemp,type:e.type,newsStatus:newsStatusTemp,userName:e.userName,deptName:e.deptName,clickNum:e.clickNum,status:statusTemp,platforms:platformTemp,category:e.category,Switch:Switch}
                 })
-                const pageList =news.filter((item,index)=>index < limit * page && index >= limit * (page - 1))
+                const pageList = news.filter((item,index)=>index < limit * page && index >= limit * (page - 1))
                 res.json({code:200,msg:'获取新闻成功',items:pageList,total:news.length})
             }else{
                 res.json({code:201,msg:'获取数据失败'})
