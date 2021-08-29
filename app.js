@@ -38,7 +38,7 @@ app.all('*',(req,res,next)=>{
 //所有进来的请求都需要携带token
 app.use((req,res,next)=>{
   let url = req.url
-  // 求职相关的所有请求
+  // 求职相关的所有请求只匹配position开头
   const positionArr = ['/recruit/getPositionList', '/position/']
   let trueUrl = -1
   for(let p of positionArr){
