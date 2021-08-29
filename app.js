@@ -38,8 +38,15 @@ app.all('*',(req,res,next)=>{
 //所有进来的请求都需要携带token
 app.use((req,res,next)=>{
   let url = req.url
-  const reg = '/recruit/getPositionList'
-  const trueUrl = url.search(reg)
+  // 求职相关的所有请求
+  const positionArr = ['/recruit/getPositionList', '/position/']
+  let trueUrl = -1
+  for(let p of positionArr){
+    if (url.search(p)!==-1) {
+      trueUrl = 0
+      break
+    }
+  }
   let whileUrl=['/users/login','/users/register','/news/upload','/users/searchDept','/position/jobSeekerRegister']
   if(whileUrl.indexOf(url) >= 0 || trueUrl !== -1){
     return next()
