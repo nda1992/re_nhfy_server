@@ -12,6 +12,8 @@ router.get('/getPositionList',async (req,res,next) => {
         if (result) {
             let positions = result.map( e => {
                 let createTime = moment(e.createdAt).format('YYYY-MM-DD HH:mm:ss')
+                // 也返回一个YYYY-MM-DD格式的时间
+                let simpleDate = moment(e.createdAt).format('YYYY-MM-DD')
                 // 状态更新：Switch
                 let Switch = ''
                 // 招聘状态
@@ -36,7 +38,7 @@ router.get('/getPositionList',async (req,res,next) => {
                         Switch = false
                         break
                 }
-                return { id:e.id,positionName:e.positionName,deptName:e.deptName,address:e.address,requireNum:e.requireNum,type:typeTemp,Switch:Switch,status:statusTemp,Handlestatus:HandlestatusTemp,userCode:e.userCode,age:e.age,english:e.english,professional:e.professional,desc:e.desc,degree:e.degree,createDate:createTime}
+                return { id:e.id,positionName:e.positionName,deptName:e.deptName,address:e.address,requireNum:e.requireNum,type:typeTemp,Switch:Switch,status:statusTemp,Handlestatus:HandlestatusTemp,userCode:e.userCode,age:e.age,english:e.english,professional:e.professional,desc:e.desc,degree:e.degree,createDate:createTime,simpleDate:simpleDate}
             })
             const pageList = positions.filter((item,index)=>index < limit * page && index >= limit * (page - 1))
             res.json({code:200,msg:'获取岗位列表成功',positions:pageList,total:positions.length})

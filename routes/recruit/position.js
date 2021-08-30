@@ -72,7 +72,6 @@ router.post('/jobSeekerInfoComplete',async (req,res,next) => {
 // jobseeker登录
 router.post('/positionLogin',async (req,res,next) => {
     const { account, password } = req.body
-    console.log(account, password)
     // 手机号登录
     if (!account || !password) {
         res.json({code:201, msg:'账号或密码不能为空'})
@@ -106,9 +105,8 @@ router.post('/positionLogin',async (req,res,next) => {
                     if(hash){
                         let { loginNum } = result
                         loginNum++;
-                        result.loginNum=loginNum;
-                        await jobSeekerInstance.update({loginNum:loginNum},{where:{phone:account}}).then(result1 => {
-                            res.json({code:200,msg:"登录成功",data:{id:result.id,username:result.username,role:result.role}})
+                        await jobSeekerInstance.update({loginNum:loginNum},{where:{email:account}}).then(result1 => {
+                            res.json({code:200,msg:"登录成功",data:{id:result.id,username:result.username,role:result.role, phone:result.phone,email:result.email,avatar:result.faceimgUrl}})
                         })
                     }else{
                         res.json({code:203,msg:'密码错误,登录失败'})
