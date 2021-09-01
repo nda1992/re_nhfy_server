@@ -57,8 +57,10 @@ router.post('/searchDeptOperate/ksflsr',async (req,res,next)=>{    // 门诊科�
 
 router.post('/searchDeptOperate/deptMaterialMedicineDetail',async (req,res,next)=>{
     const data = req.body
+    const { page, limit, role } = req.body
     // console.log(data)
     // const { startDate, endDate, Depttype, Catetype } = req.body
+
     const start = data['startDate'].concat(' 00:00:00')
     const end = data['endDate'].concat(' 23:59:59')
     let sql = ``
@@ -373,7 +375,13 @@ router.post('/searchDeptOperate/deptMaterialMedicineDetail',async (req,res,next)
         }
     }
     const result = (await connection).execute(sql)
-    res.json({ code:200,msg:'数据获取成功',items:(await result).rows, flag:flag, title:title })
+    const items = (await result).rows
+    // 总金额
+    const sum = Math.floor((items.map(v => v.总金额).reduce((cur, acc) => cur + acc)) * 100) / 100
+    const pageList = items.filter((item,index)=>index < limit * page && index >= limit * (page - 1))
+    res.json({ code:200,msg:'数据获取成功',items: pageList, flag:flag, title:title, total: items.length, sum: sum })
 })
+
+
 
 module.exports = router
