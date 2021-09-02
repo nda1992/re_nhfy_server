@@ -159,9 +159,87 @@ router.post('/uploadAvatar',uploader.array('file'),async (req,res,next)=>{
 
 // 用户投递简历
 router.post('/postPosition',async (req,res,next) => {
-    const { professionalId, jobSeekerId } = req.body
-
+    const { positionlId, jobSeekerId } = req.body
+    // status=1：已投递，未阅读;isPosted=true:表示已投递
+    post2positionInstance.create({jobSeekerId:jobSeekerId, PositionId:positionlId,status:1,isPosted:true}).then(result => {
+        if(result){
+            res.json({code:200,msg:'简历投递成功'})
+        }else{
+            res.json({code:201,msg:'简历投递失败'})
+        }
+    })
 })
 
+// 获取岗位列表
+router.get('/getPositionList',async (req,res,next) => {
+    const { role, limit, page, jobseekerId } = req.query
+    // jobseekerId为空时，表示用户还没有登录，直接返回所有的岗位列表
+    const positionList = await positionInstance.findAll({where: {Handlestatus:2}})  //只查询出Handlestatus=2（表示已通过审核的岗位）
+    let positions = positionList.map( e => {
+        let createTime = moment(e.createdAt).format('YYYY-MM-DD HH:mm:ss')
+        // 也返回一个YYYY-MM-DD格式的时间
+        let simpleDate = moment(e.createdAt).format('YYYY-MM-DD')
+        // 状态更新：Switch
+        let Switch = ''
+        // 招聘状态
+        let statusTemp = ''
+        e.status===1 ? statusTemp='在招' : statusTemp = '已结束'
+        // 岗位类别
+        let typeTemp = ''
+        e.type===1 ? typeTemp='事业编' :typeTemp='非事业编'
+        // 当前状态
+        let HandlestatusTemp = ''
+        switch (e.Handlestatus) {
+            case 1: 
+                HandlestatusTemp = '已删除'
+                Switch = false
+                break
+            case 2: 
+                HandlestatusTemp = '审核已通过'
+                Switch = true
+                break
+            case 3: 
+                HandlestatusTemp = '未审核'
+                Switch = false
+                break
+        }
+        // isPosted=false:未投递，isPosted=true：已投递
+        return { id:e.id,positionName:e.positionName,deptName:e.deptName,address:e.address,requireNum:e.requireNum,type:typeTemp,Switch:Switch,status:statusTemp,Handlestatus:HandlestatusTemp,userCode:e.userCode,age:e.age,english:e.english,professional:e.professional,desc:e.desc,degree:e.degree,createDate:createTime,simpleDate:simpleDate,isPosted:false}
+    })
+    if (jobseekerId === undefined || jobseekerId === '' || jobseekerId === null) {
+        const pageList = positions.filter((item,index)=>index < limit * page && index >= limit * (page - 1))
+        res.json({code:200,msg:'获取岗位列表成功',positions:pageList,total:positions.length})
+    } else {
+        // 1.先查询投递映射表
+        await post2positionInstance.findAll({where: {jobseekerId:jobseekerId}}).then(result => {
+            // 已经投递的岗位id
+            const pids = result.map(v => v.PositionId)
+            let resultTemp = []
+            positionList.forEach(e => {
+                // 说明该jobseeker已经投递了该岗位的简历
+                if (pids.includes(e.id)){
+                    resultTemp.push(Object.assign({},e.dataValues,{isPosted:true}))
+                }else{
+                    resultTemp.push(Object.assign({},e.dataValues,{isPosted:false}))
+                }
+            })
+            const pageList = resultTemp.filter((item,index)=>index < limit * page && index >= limit * (page - 1))
+            res.json({code:200,msg:'获取岗位列表成功',positions:pageList,total:resultTemp.length})
+        })
+    }
+ })
+
+// 获取某一个用户已经投递的岗位列表
+router.get('/getPost2PositionListByUid', async (req, res,next) => {
+    const { id } = req.query
+    await post2positionInstance.findAll({where:{jobSeekerId:id}}).then(result => {
+        if(result) {
+            res.json({code:200,positions:result})
+        }else{
+            res.json({code:201,msg:'获取数据失败'})
+        }
+    })
+
+})
 
 module.exports = router

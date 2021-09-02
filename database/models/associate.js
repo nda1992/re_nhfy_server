@@ -17,7 +17,8 @@ const post2positionInstance = sequelize.define('post2position',{
         autoIncrement:true,
         allowNull:false
         },
-    status: {type: Sequelize.INTEGER}
+    status: {type: Sequelize.INTEGER},
+    isPosted: {type: Sequelize.INTEGER}
     },{tableName:'post2positions'}
 )
 // 求职者和投递岗位的多对多关联
