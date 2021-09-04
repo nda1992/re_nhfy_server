@@ -6,7 +6,7 @@
 - 文件上传：multer
 - 时间处理：moment
 ### 数据库的配置(Linux环境下)
-Step1:*数据库的文件：/myapp/database/re_nhfy.sql*
+Step1:*数据库的文件：/myapp/database/re_nhfy.sql*<br>
 Step2:
 ``` shell
 mysql -uroot -p123456
