@@ -1,10 +1,16 @@
 # 对nhfy项目的server服务端代码进行重构
 ### 技术栈
+- node -v:14.15.1
 - 框架：Express
 - 数据库：MySQL
 - ORM：sequelize
 - 文件上传：multer
 - 时间处理：moment
+### 主要功能
+- 对登录后的请求全部使用token认证（可使用jwt生成token。为了方便测试项目中只定义为token字符串）
+- 处理前端(re_nhfy_client)项目中涉及到的所有请求
+
+[前端项目](https://github.com/nda1992/re_nhfy_client.git)
 ### 数据库的配置(Linux环境下)
 Step1:*数据库的文件：/myapp/database/re_nhfy.sql*<br>
 Step2:
