@@ -15,8 +15,11 @@ quit;
 cd /myapp/re_nhfy_server/database
 mysql -uroot -p123456 re_nhfy < re_nhfy.sql
 ```
-Step3: vim /re_nhfy_server/myapp/config/config.json
-Step4: 根据自己的mysql来配置dev、test、production三种环境的数据库数据库连接即可
+Step3: 
+```shell
+vim /re_nhfy_server/myapp/config/config.json
+```
+Step4: *根据自己的mysql来配置dev、test、production三种环境的数据库数据库连接即可*
 
 ### 运行项目(启动服务端)
  ```shell

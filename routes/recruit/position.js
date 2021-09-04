@@ -132,6 +132,13 @@ router.get('/UserinfoDetail', async (req,res,next) => {
     })
 })
 
+// 用户更新个人信息
+router.post('/updateUserinfo',async (req,res,next) => {
+    const data = req.body
+    console.log(data)
+    res.json({code:200,msg:'更新信息成功'})
+})
+
 // 头像上传
 const avatarPath = path.join(__dirname,'../../public/jobseekersAvatar/')
 const avatarStorage = multer.diskStorage({
