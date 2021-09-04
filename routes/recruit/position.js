@@ -4,7 +4,6 @@
 - 用户收藏岗位
 - 用户分享岗位
 */
-
 const express = require('express')
 const router = express.Router()
 const path = require('path')
@@ -14,6 +13,7 @@ const multer = require('multer')
 const moment = require('moment-timezone')
 const saltPasswd = require('../../utils/saltPasswd')
 const comparePasswd = require('../../utils/saltPasswd')
+const { Op } = require('sequelize')
 const { positionInstance, jobSeekerInstance,post2positionInstance } = require('../../database/models/associate')
 // 设置时区
 moment.tz.setDefault('Asia/Shanghai')
@@ -160,8 +160,8 @@ router.post('/uploadAvatar',uploader.array('file'),async (req,res,next)=>{
 // 用户投递简历
 router.post('/postPosition',async (req,res,next) => {
     const { positionlId, jobSeekerId } = req.body
-    // status=1：已投递，未阅读;isPosted=true:表示已投递
-    post2positionInstance.create({jobSeekerId:jobSeekerId, PositionId:positionlId,status:1,isPosted:true}).then(result => {
+    // status=1：已投递，未阅读;isPosted=true:表示已投递;confirm:是否确定参加笔试和面试，1=参加、0=不参加
+    post2positionInstance.create({jobSeekerId:jobSeekerId, PositionId:positionlId,status:1,isPosted:1,confirm:0}).then(result => {
         if(result){
             res.json({code:200,msg:'简历投递成功'})
         }else{
@@ -229,17 +229,85 @@ router.get('/getPositionList',async (req,res,next) => {
     }
  })
 
-// 获取某一个用户已经投递的岗位列表
-router.get('/getPost2PositionListByUid', async (req, res,next) => {
-    const { id } = req.query
-    await post2positionInstance.findAll({where:{jobSeekerId:id}}).then(result => {
-        if(result) {
-            res.json({code:200,positions:result})
+
+// 获取post2position对应的jobseeker和position
+router.get('/getPost2PositionListByUid', async (req, res, next) => {
+    const queryid = parseInt(req.query.jobseekerId)
+    // 不提供jobseekerid时，获取全部（管理员专用的查询）
+    if(req.query.jobseekerId === undefined) {
+        await positionInstance.findAll({include:jobSeekerInstance}).then((result) =>{
+            const items = result.filter(item => item.jobSeekers.length !== 0 && item.Handlestatus !== 1).map( e => {
+                // 审核按钮
+                let Switch = false
+                // 投递时间
+                const createdTime = moment(e.jobSeekers[0].post2position.createdAt).format('YYYY-MM-DD HH:mm:ss')
+                const username = e.jobSeekers[0].username
+                const professional = e.jobSeekers[0].professional
+                const school = e.jobSeekers[0].school
+                const phone = e.jobSeekers[0].phone
+                const email = e.jobSeekers[0].email
+                const attachmentUrl = e.jobSeekers[0].attachmentUrl
+                let statusTemp = ''
+                if(e.jobSeekers[0].post2position.status===1) {
+                    statusTemp = '未审核'
+                }else if (e.jobSeekers[0].post2position.status===2){
+                    statusTemp = '已审核通过'
+                    Switch = true
+                }else if (e.jobSeekers[0].post2position.status===3) {
+                    statusTemp = '审核未通过'
+                } else if (e.jobSeekers[0].post2position.status===4) {
+                    statusTemp = '求职者已确认'
+                }
+                return {createdTime:createdTime,positionName:e.positionName,username:username,professional:professional,school:school,phone:phone,email:email,attachmentUrl:attachmentUrl,status:statusTemp,Switch:Switch}
+            })
+            res.json({code:200,msg:'数据获取成功',items:items})
+        })
+    }else{
+        await jobSeekerInstance.findAll({where: {id:queryid},include:positionInstance}).then((result) =>{
+            const positions = result[0].Positions.filter( p => p.Handlestatus !== 1).map( e => {
+                const createdTime = moment(e.createdAt).format('YYYY-MM-DD HH:mm:ss')
+                const typeTemp = e.type === 1?'事业编':'非事业编'
+                let statusTemp = ''
+                // 未审核，未确认
+                if (e.post2position.status===1 && e.post2position.confirm===0){
+                    statusTemp = '未审核'
+                }else if (e.post2position.status===2 && e.post2position.confirm===0){
+                    statusTemp = '审核已通过'
+                }else if (e.post2position.status===2 && e.post2position.confirm===1){
+                    statusTemp = '已确认'
+                }else if (e.post2position.status===3 && e.post2position.confirm===0){
+                    statusTemp = '审核未通过'
+                }
+                // currentStatusTemp = e.status === 1 ? '在招' : '已结束' 
+                return {id:e.id,positionName:e.positionName,address:e.address,requireNum:e.requireNum,type:typeTemp,age:e.age,degree:e.degree,professional:e.professional,status:statusTemp,desc:e.desc,createdTime:createdTime,deptName:e.deptName,english:e.english}
+            })
+            res.json({code:200,items:positions})
+        })
+    }
+})
+
+// 用户取消某个已经投递的岗位
+router.get('/cancelPostedByPid', async (req, res, next) => {
+    const { pid, uid } = req.query
+    await post2positionInstance.destroy({where:{PositionId: pid,jobSeekerId:uid}}).then((result) => {
+        if(result){
+            res.json({code:200,msg:'已取消投递的岗位'})
         }else{
-            res.json({code:201,msg:'获取数据失败'})
+            res.json({code:201,msg:'取消失败'})
         }
     })
+})
 
+//用户确认参加考试
+router.get('/confirmStauts',async (req, res, next) => {
+    const { pid, uid } = req.query
+    await post2positionInstance.update({confirm:1},{where:{PositionId: pid,jobSeekerId: uid}}).then((result) => {
+        if(result){
+            res.json({code:200,msg:'你已确认,请密切关注考试时间'})
+        }else{
+            res.json({code:201,msg:'更新状态失败'})
+        }
+    })
 })
 
 module.exports = router

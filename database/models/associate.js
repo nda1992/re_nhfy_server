@@ -18,11 +18,14 @@ const post2positionInstance = sequelize.define('post2position',{
         allowNull:false
         },
     status: {type: Sequelize.INTEGER},
-    isPosted: {type: Sequelize.INTEGER}
+    isPosted: {type: Sequelize.INTEGER},
+    // 确认参加笔试和面试：1=参加，0=不参加
+    confirm: {type: Sequelize.INTEGER},
     },{tableName:'post2positions'}
 )
 // 求职者和投递岗位的多对多关联
 jobSeekerInstance.belongsToMany(positionInstance,{through:post2positionInstance})
 positionInstance.belongsToMany(jobSeekerInstance,{through:post2positionInstance})
+
 
 module.exports = {jobSeekerInstance,positionInstance,post2positionInstance}
