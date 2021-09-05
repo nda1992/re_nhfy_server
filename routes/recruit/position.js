@@ -6,7 +6,8 @@
 */
 const express = require('express')
 const router = express.Router()
-const qs = require('qs')
+const mammoth = require('mammoth')
+const docxConverter = require('docx-pdf');
 const path = require('path')
 const fs = require('fs')
 const { v4: uuidv4 } = require('uuid');
@@ -24,12 +25,13 @@ moment.tz.setDefault('Asia/Shanghai')
 // 求职者注册
 router.post('/positionRegister',async (req,res,next) => {
     const { username, password, phone, email } = req.body
+    const defaultAvatar = 'http://localhost:3000/jobseekersAvatar/default.jpg'
     const hash = await saltPasswd.saltPasswd(password)
     await jobSeekerInstance.findOne({where:{username:username,phone:phone}}).then(async user => {
         if(user){
             res.json({code:202,msg:'该用户的手机号已经注册了,可直接登录'})
         }else{
-            await jobSeekerInstance.create({username:username,password:hash,phone:phone,email:email}).then(result => {
+            await jobSeekerInstance.create({username:username,password:hash,phone:phone,email:email,faceimgUrl:defaultAvatar}).then(result => {
                 if(result){
                     res.json({code:200,msg:'注册成功,你可以进行登录了'})
                 }else{
@@ -125,7 +127,7 @@ router.get('/UserinfoDetail', async (req,res,next) => {
     await jobSeekerInstance.findOne({where: {id:uid}}).then(result => {
         if (result){
             const doneUserinfo = Object.values(result.dataValues).includes(null)    // 如果包含有null的属性，则提醒用户完善信息
-            res.json({code:200,userinfo:result,doneUserinfo:doneUserinfo})
+            res.json({code:200,userinfo:result,doneUserinfo:!doneUserinfo})
         }else{
             res.json({code:201,msg:'拉取信息失败'})
         }
@@ -135,8 +137,47 @@ router.get('/UserinfoDetail', async (req,res,next) => {
 // 用户更新个人信息
 router.post('/updateUserinfo',async (req,res,next) => {
     const data = req.body
-    console.log(data)
-    res.json({code:200,msg:'更新信息成功'})
+    const { basic } = req.body
+    const returnData = { username:data.username,avatar:data.faceimgUrl,email: data.email,phone: data.phone }
+    // 更新详细信息
+    if(basic){
+        await jobSeekerInstance.update({sex:data.sex,age:data.age,birthday:data.birthday,nation:data.nation,address:data.address,degree:data.degree,school:data.school,professional: data.professional,undergraduateTime:data.undergraduateTime,faceimgUrl: data.faceimgUrl,attachmentUrl:data.attachmentUrl},{where:{id:data.id}}).then((result) => {
+            if(result){
+                res.json({code:200,msg:'更新信息成功',data:returnData})
+            }else{ 
+                res.json({code:201,msg:'信息更新失败'})
+            }
+        })
+    // 更新基本信息    
+    }else{
+        await jobSeekerInstance.update({username:data.username,avatar:data.avatar,phone:data.phone,email:data.email},{where:{id:data.id}}).then(result => {
+            if(result){
+                res.json({code:200,msg:'更新信息成功', data:returnData})
+            }else{
+                res.json({code:201,msg:'信息更新失败'})
+            }
+        })
+    }
+})
+
+// 用户密码更新
+router.post('/updatePasswd', async (req, res, next) => {
+    const { phone, password } = req.body
+    //密码加盐
+    const hash = await saltPasswd.saltPasswd(password)
+    await jobSeekerInstance.findOne({where: {phone: phone}}).then(async (result) => {
+        if(result){
+            await jobSeekerInstance.update({password:hash},{where:{phone: phone}}).then( info => {
+                if(info){
+                    res.json({code:200,msg:'密码更新成功'})
+                }else{
+                    res.json({code:200,msg:'密码更新失败'})
+                }
+            })
+        }else{
+            res.json({code:201,msg:'该手机号没有注册'})
+        }
+    })
 })
 
 // 头像上传
@@ -180,7 +221,7 @@ router.post('/uploadAvatar',avatarUploader.array('file'),async (req,res,next)=>{
 
 // 文件上传
 const filePath = path.join(__dirname,'../../public/jobseekersFiles/')
-const fileStorage = multer.memoryStorage({
+const fileStorage = multer.diskStorage({
     destination: (req,file,cb)=>{
         cb(null,filePath)
     }, 
@@ -194,10 +235,11 @@ router.post('/uploadFile',fileUploader.array('file'),async (req,res,next) => {
     const { id } = req.body
     const fileOrigin = 'http://localhost:3000/jobseekersFiles/'
     const files = req.files
+    console.log(files)
     let temp = files.map(e=>{
         const uuid = uuidv4()
-        let basename = path.basename(e.path)    //源文件名
-        let suffix = path.extname(e.path)       //文件后缀
+        let basename = path.basename(e.originalname)    //源文件名
+        let suffix = path.extname(e.originalname)       //文件后缀
         let newname = uuid+suffix               //新文件名
         fs.rename(filePath+basename,filePath+newname,err=>{
             // console.log(err)
@@ -212,6 +254,42 @@ router.post('/uploadFile',fileUploader.array('file'),async (req,res,next) => {
         }
     })
 })
+
+
+// 查看docx文档
+router.post('/getResumeFile', async (req, res, next) => {
+    const { url } = req.body
+    const docxfilePath = path.join(__dirname,'../../public/jobseekersFiles/')
+    const arr = url.split('/').slice(-1)
+    const files = fs.readdirSync(docxfilePath)
+    let file = ''
+    for(let f in files) {
+        if(files[f]===arr[0]){
+            file=files[f]
+            break
+        }
+    }
+    let html = ''
+    const fullPath = path.join(docxfilePath,file)
+    mammoth.convertToHtml({path: fullPath}).then(function(result){
+        html = result.value; // The generated HTML
+        res.json({code:200,html:html})
+    }).done();
+})
+
+// 将docx转为pdf
+// router.get('/toPdf', async (req, res) => {
+//     const docxfilePath = path.join(__dirname,'../../public/jobseekersFiles/')
+//     const filename= '83027c09-ba02-4510-821c-7ec2b80a2bec.docx'
+//     const fullPath = path.join(docxfilePath,filename)
+//     docxConverter(fullPath,path.join(docxfilePath,'output.pdf'),function(err,result){
+//         if(err){
+//           console.log(err);
+//         }
+//         console.log('result'+result);
+//       });
+//     res.json({code:200})
+// })
 
 
 // 用户投递简历
@@ -387,7 +465,6 @@ router.get('/confirmStauts',async (req, res, next) => {
 // 管理员审核求职者的简历状态
 router.post('/setPositionStatus',async (req,res,next) => {
     const { id, jobseekerId, Switch } = req.body
-    console.log(req.body)
     // Switch=true:已阅读，审核通过，Switch=false：阅读审核未通过
     if(!Switch){
         await post2positionInstance.update({ status: 3 },{where: {PositionId: id, jobSeekerId: jobseekerId}}).then((result) => {
