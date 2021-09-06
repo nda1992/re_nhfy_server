@@ -8,6 +8,7 @@ const express = require('express')
 const router = express.Router()
 const mammoth = require('mammoth')
 const docxConverter = require('docx-pdf');
+const sequelize = require('../../database/connection')
 const path = require('path')
 const fs = require('fs')
 const { v4: uuidv4 } = require('uuid');
@@ -16,7 +17,7 @@ const moment = require('moment-timezone')
 const saltPasswd = require('../../utils/saltPasswd')
 const comparePasswd = require('../../utils/saltPasswd')
 const { Op } = require('sequelize')
-const { positionInstance, jobSeekerInstance,post2positionInstance } = require('../../database/models/associate');
+const { positionInstance, jobSeekerInstance,post2positionInstance, get2CollectInstance } = require('../../database/models/associate');
 // 设置时区
 moment.tz.setDefault('Asia/Shanghai')
 
@@ -31,7 +32,7 @@ router.post('/positionRegister',async (req,res,next) => {
         if(user){
             res.json({code:202,msg:'该用户的手机号已经注册了,可直接登录'})
         }else{
-            await jobSeekerInstance.create({username:username,password:hash,phone:phone,email:email,faceimgUrl:defaultAvatar}).then(result => {
+            await jobSeekerInstance.create({openid:'openid',username:username,password:hash,phone:phone,email:email,faceimgUrl:defaultAvatar}).then(result => {
                 if(result){
                     res.json({code:200,msg:'注册成功,你可以进行登录了'})
                 }else{
@@ -291,12 +292,36 @@ router.post('/getResumeFile', async (req, res, next) => {
 //     res.json({code:200})
 // })
 
+// 用户收藏岗位
+router.post('/handleCollect', async (req,res,next) => {
+    const { positionId, jobSeekerId, isCollected } = req.body
+    // 如果isCollected=true，说明已经收藏，再次点击时，则取消收藏
+    if (isCollected) {
+        await get2CollectInstance.destroy({where:{PositionId:positionId, jobSeekerId:jobSeekerId}}).then((result) =>{
+            if(result) {
+                res.json({code:200,msg:'已取消收藏'})
+            }else{
+                res.json({code:200,msg:'取消收藏失败'})
+            }
+        })
+    }else{
+        await get2CollectInstance.create({ PositionId:positionId, jobSeekerId:jobSeekerId}).then(result => {
+            if (result){
+                res.json({code:200,msg:'收藏岗位成功'})
+            }else{
+                res.json({code:201,msg:'收藏岗位失败'})
+            }
+        })
+    }
+})
+
+
 
 // 用户投递简历
 router.post('/postPosition',async (req,res,next) => {
-    const { positionlId, jobSeekerId } = req.body
+    const { positionId, jobSeekerId } = req.body
     // status=1：已投递，未阅读;isPosted=true:表示已投递;confirm:是否确定参加笔试和面试，1=参加、0=不参加
-    post2positionInstance.create({jobSeekerId:jobSeekerId, PositionId:positionlId,status:1,isPosted:1,confirm:0}).then(result => {
+    post2positionInstance.create({jobSeekerId:jobSeekerId, PositionId:positionId,status:1,isPosted:1,confirm:0}).then(result => {
         if(result){
             res.json({code:200,msg:'简历投递成功'})
         }else{
@@ -339,101 +364,155 @@ router.get('/getPositionList',async (req,res,next) => {
                 break
         }
         // isPosted=false:未投递，isPosted=true：已投递
-        return { id:e.id,positionName:e.positionName,deptName:e.deptName,address:e.address,requireNum:e.requireNum,type:typeTemp,Switch:Switch,status:statusTemp,Handlestatus:HandlestatusTemp,userCode:e.userCode,age:e.age,english:e.english,professional:e.professional,desc:e.desc,degree:e.degree,createDate:createTime,simpleDate:simpleDate,isPosted:false}
+        return { id:e.id,positionName:e.positionName,deptName:e.deptName,address:e.address,requireNum:e.requireNum,type:typeTemp,Switch:Switch,status:statusTemp,Handlestatus:HandlestatusTemp,userCode:e.userCode,age:e.age,english:e.english,professional:e.professional,desc:e.desc,degree:e.degree,createDate:createTime,simpleDate:simpleDate,isPosted:false,isCollected:false}
     })
     if (jobseekerId === undefined || jobseekerId === '' || jobseekerId === null) {
         const pageList = positions.filter((item,index)=>index < limit * page && index >= limit * (page - 1))
         res.json({code:200,msg:'获取岗位列表成功',positions:pageList,total:positions.length})
     } else {
+        let resultTemp = []
         // 1.先查询投递映射表
-        await post2positionInstance.findAll({where: {jobseekerId:jobseekerId}}).then(result => {
+        const postedPositions = await post2positionInstance.findAll({where: {jobseekerId:jobseekerId}})
+        // 2.查找收藏映射表
+        const collectedPositions = await get2CollectInstance.findAll({where:{jobSeekerId:jobseekerId}})
             // 已经投递的岗位id
-            const pids = result.map(v => v.PositionId)
-            let resultTemp = []
+            const pids = postedPositions.map(v => v.PositionId)
+            // 已经收藏的岗位id
+            const cids = collectedPositions.map( v=> v.PositionId)
             positionList.forEach(e => {
                 // 说明该jobseeker已经投递了该岗位的简历
                 if (pids.includes(e.id)){
-                    resultTemp.push(Object.assign({},e.dataValues,{isPosted:true}))
+                    if (cids.includes(e.id)){
+                        resultTemp.push(Object.assign({},e.dataValues,{isPosted:true, isCollected:true}))
+                    }else{
+                        resultTemp.push(Object.assign({},e.dataValues,{isPosted:true, isCollected:false}))
+                    }
                 }else{
-                    resultTemp.push(Object.assign({},e.dataValues,{isPosted:false}))
+                    if (cids.includes(e.id)){
+                        resultTemp.push(Object.assign({},e.dataValues,{isPosted:false, isCollected:true}))
+                    }else{
+                        resultTemp.push(Object.assign({},e.dataValues,{isPosted:false, isCollected:false}))
+                    }
                 }
             })
-            const pageList = resultTemp.filter((item,index)=>index < limit * page && index >= limit * (page - 1))
-            res.json({code:200,msg:'获取岗位列表成功',positions:pageList,total:resultTemp.length})
-        })
+        const pageList = resultTemp.filter((item,index)=>index < limit * page && index >= limit * (page - 1))
+        res.json({code:200,msg:'获取岗位列表成功',positions:pageList,total:resultTemp.length})
     }
  })
 
 
-// 获取post2position对应的jobseeker和position
+// 获取post2positions、get2collects对应的jobseekers和positions
 router.get('/getPost2PositionListByUid', async (req, res, next) => {
     const queryid = parseInt(req.query.jobseekerId)
     const { limit, page } = req.query
     // 不提供jobseekerid时，获取全部（管理员专用的查询）
     if(req.query.jobseekerId === undefined) {
-        await positionInstance.findAll({include:jobSeekerInstance}).then((result) =>{
-            const items = result.filter(item => item.jobSeekers.length !== 0 && item.Handlestatus === 2).map( e => {
-                // 遍历该岗位的所有已经投递简历的求职者
-                const positions = e.jobSeekers.map( s => {
-                // 审核按钮
-                let Switch = false
-                // 投递时间
-                const createdTime = moment(s.post2position.createdAt).format('YYYY-MM-DD HH:mm:ss')
-                const jobseekerId = s.id
-                const username = s.username
-                const professional = s.professional
-                const school = s.school
-                const phone = s.phone
-                const email = s.email
-                const attachmentUrl = s.attachmentUrl
-                let statusTemp = ''
-                if(s.post2position.status===1) {
-                    statusTemp = '未审核'
-                }else if (s.post2position.status===2){
-                    statusTemp = '已审核通过'
-                    Switch = true
-                }else if (s.post2position.status===3) {
-                    statusTemp = '审核未通过'
-                } else if (s.post2position.status===4) {
-                    statusTemp = '求职者已确认'
-                }
-                return {id:e.id,jobseekerId:jobseekerId,createdTime:createdTime,positionName:e.positionName,username:username,professional:professional,school:school,phone:phone,email:email,attachmentUrl:attachmentUrl,status:statusTemp,Switch:Switch}
-                })
-                return positions
-            })
-            const resultPositions = []
-            for(let i of items) {
-                for(let j of i){
-                    resultPositions.push(j)
-                }
+        const Allsql = `select c.id,c.positionName,b.status,a.id as jobseekerId,a.username,a.professional,a.age,a.school,a.phone,a.email,a.attachmentUrl,c.createdAt from jobseekers a left join post2positions b on a.id = b.jobSeekerId left join positions c on b.PositionId = c.id  where c.Handlestatus=2`
+        const AllPostedPositions = await sequelize.query(Allsql)
+        const AllpostedPositionsList = AllPostedPositions[0].map( s => {
+            // 审核按钮
+            let Switch = false
+            // 投递时间
+            const createdTime = moment(s.createdAt).format('YYYY-MM-DD HH:mm:ss')
+            const jobseekerId = s.jobseekerId
+            const username = s.username
+            const professional = s.professional
+            const school = s.school
+            const phone = s.phone
+            const email = s.email
+            const attachmentUrl = s.attachmentUrl
+            let statusTemp = ''
+            if(s.status===1) {
+                statusTemp = '未审核'
+            }else if (s.status===2){
+                statusTemp = '已审核通过'
+                Switch = true
+            }else if (s.status===3) {
+                statusTemp = '审核未通过'
+            } else if (s.status===4) {
+                statusTemp = '求职者已确认'
             }
-            const pageList = resultPositions.filter((item,index)=>index < limit * page && index >= limit * (page - 1))
-            res.json({code:200,msg:'数据获取成功',items:pageList,total:resultPositions.length})
-            // const items = result.filter(item => item.jobSeekers.length !== 0 && item.Handlestatus === 2)
-            // res.json({items:resultPositions})
+            return {id:s.id,jobseekerId:jobseekerId,createdTime:createdTime,positionName:s.positionName,username:username,professional:professional,school:school,phone:phone,email:email,attachmentUrl:attachmentUrl,status:statusTemp,Switch:Switch}
         })
+        const pageList = AllpostedPositionsList.filter((item,index)=>index < limit * page && index >= limit * (page - 1))
+        res.json({code:200,msg:'数据获取成功',items:pageList,total:AllpostedPositionsList.length})
+        // await positionInstance.findAll({include:jobSeekerInstance}).then((result) =>{
+        //     const items = result.filter(item => item.jobSeekers.length !== 0 && item.Handlestatus === 2).map( e => {
+        //         // 遍历该岗位的所有已经投递简历的求职者
+        //         const positions = e.jobSeekers.map( s => {
+        //         // 审核按钮
+        //         let Switch = false
+        //         // 投递时间
+        //         const createdTime = moment(s.post2position.createdAt).format('YYYY-MM-DD HH:mm:ss')
+        //         const jobseekerId = s.id
+        //         const username = s.username
+        //         const professional = s.professional
+        //         const school = s.school
+        //         const phone = s.phone
+        //         const email = s.email
+        //         const attachmentUrl = s.attachmentUrl
+        //         let statusTemp = ''
+        //         if(s.post2position.status===1) {
+        //             statusTemp = '未审核'
+        //         }else if (s.post2position.status===2){
+        //             statusTemp = '已审核通过'
+        //             Switch = true
+        //         }else if (s.post2position.status===3) {
+        //             statusTemp = '审核未通过'
+        //         } else if (s.post2position.status===4) {
+        //             statusTemp = '求职者已确认'
+        //         }
+        //         return {id:e.id,jobseekerId:jobseekerId,createdTime:createdTime,positionName:e.positionName,username:username,professional:professional,school:school,phone:phone,email:email,attachmentUrl:attachmentUrl,status:statusTemp,Switch:Switch}
+        //         })
+        //         return positions
+        //     })
+        //     const resultPositions = []
+        //     for(let i of items) {
+        //         for(let j of i){
+        //             resultPositions.push(j)
+        //         }
+        //     }
+        //     const pageList = resultPositions.filter((item,index)=>index < limit * page && index >= limit * (page - 1))
+        //     res.json({code:200,msg:'数据获取成功',items:pageList,total:resultPositions.length})
+        //     // const items = result.filter(item => item.jobSeekers.length !== 0 && item.Handlestatus === 2)
+        //     // res.json({items:resultPositions})
+        // })
     }else{
-        await jobSeekerInstance.findAll({where: {id:queryid},include:positionInstance}).then((result) =>{
-            const positions = result[0].Positions.filter( p => p.Handlestatus !== 1).map( e => {
-                const createdTime = moment(e.createdAt).format('YYYY-MM-DD HH:mm:ss')
-                const typeTemp = e.type === 1?'事业编':'非事业编'
-                let statusTemp = ''
-                // 未审核，未确认
-                if (e.post2position.status===1 && e.post2position.confirm===0){
-                    statusTemp = '未审核'
-                }else if (e.post2position.status===2 && e.post2position.confirm===0){
-                    statusTemp = '管理员审核已通过'
-                }else if (e.post2position.status===4 && e.post2position.confirm===1){
-                    statusTemp = '已确认'
-                }else if (e.post2position.status===3 && e.post2position.confirm===0){
-                    statusTemp = '审核未通过'
-                }
-                // currentStatusTemp = e.status === 1 ? '在招' : '已结束' 
-                return {id:e.id,positionName:e.positionName,address:e.address,requireNum:e.requireNum,type:typeTemp,age:e.age,degree:e.degree,professional:e.professional,status:statusTemp,desc:e.desc,createdTime:createdTime,deptName:e.deptName,english:e.english}
-            })
-            const pageList = positions.filter((item,index)=>index < limit * page && index >= limit * (page - 1))
-            res.json({code:200,items:pageList,total:positions.length})
+        /*因为涉及了三表关联，所以使用了sequelize提供的原生SQL查询，当然，这里不使用sequelize提供的表关联也是可以的（而且更方便），因为从前端传递过来的uid和pid都是实实在在存在的数据，所以在对get2collectd
+        和post2positions这两个表进行create即可，不用担心数据不存在的问题。所以可以不用配置关联，这样反而更方便一些，我这里懒得修改了*/ 
+        // 投递的岗位列表
+        const Collectedsql = `select c.status as positionStatus,c.id,c.positionName,c.address,c.requireNum,c.type,c.age,c.degree,c.professional,c.desc,b.createdAt,c.deptName,c.english from jobseekers a left join get2collects b on a.id = b.jobSeekerId left join positions c on b.PositionId = c.id  where a.id = ${queryid} and c.Handlestatus<>1`
+        // 收藏的岗位列表
+        const Postedsql = `select c.status as positionStatus,c.id,c.positionName,c.address,c.requireNum,c.type,c.age,c.degree,c.professional,c.desc,b.status,b.confirm,b.createdAt,c.deptName,c.english from jobseekers a left join post2positions b on a.id = b.jobSeekerId left join positions c on b.PositionId = c.id  where a.id = ${queryid} and c.Handlestatus<>1`
+        const postedPositions = await sequelize.query(Postedsql)
+        const CollectedPositions = await sequelize.query(Collectedsql)
+        // 对投递的岗位列表进行处理
+        const postedPositionsList = postedPositions[0].map( e => {
+            const createdTime = moment(e.createdAt).format('YYYY-MM-DD HH:mm:ss')
+            const typeTemp = e.type === 1?'事业编':'非事业编'
+            let statusTemp = ''
+            if (e.status===1 && e.confirm===0){
+                statusTemp = '未审核'
+            }else if (e.status===2 && e.confirm===0){
+                statusTemp = '管理员审核已通过'
+            }else if (e.status===4 && e.confirm===1){
+                statusTemp = '已确认'
+            }else if (e.status===3 && e.confirm===0){
+                statusTemp = '审核未通过'
+            }
+            currentStatusTemp = e.positionStatus === 1 ? '在招' : '已结束' 
+            return {id:e.id,positionName:e.positionName,address:e.address,requireNum:e.requireNum,type:typeTemp,age:e.age,degree:e.degree,professional:e.professional,status:statusTemp,desc:e.desc,createdTime:createdTime,deptName:e.deptName,english:e.english,currentStatus:currentStatusTemp}
         })
+        // 对收藏的岗位列表进行处理
+        const collectedPositionsList = CollectedPositions[0].map(e => {
+            const createdTime = moment(e.createdAt).format('YYYY-MM-DD HH:mm:ss')
+            const typeTemp = e.type === 1?'事业编':'非事业编'
+            currentStatusTemp = e.positionStatus === 1 ? '在招' : '已结束'
+            return {id:e.id,positionName:e.positionName,address:e.address,requireNum:e.requireNum,type:typeTemp,age:e.age,degree:e.degree,professional:e.professional,desc:e.desc,createdTime:createdTime,deptName:e.deptName,english:e.english,currentStatus:currentStatusTemp,isCllected:true}
+        })
+        const PostedpageList = postedPositionsList.filter((item,index)=>index < limit * page && index >= limit * (page - 1))
+        const CollectedpageList = collectedPositionsList.filter((item,index)=>index < limit * page && index >= limit * (page - 1))
+        res.json({code:200,postedPositions:PostedpageList,collectedPositions:CollectedpageList,postedTotal:postedPositionsList.length,collectedTotal:collectedPositionsList.length})
     }
 })
 

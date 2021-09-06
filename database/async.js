@@ -1,6 +1,6 @@
 const sequelize = require('./connection');
 const { Sequelize,DataTypes} = require('sequelize');
-require('./models/associate');
+require('./models/collectAssociate');
 
 // 测试连接
 sequelize.authenticate().then(() => {
