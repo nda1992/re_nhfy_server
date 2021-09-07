@@ -27,12 +27,13 @@ moment.tz.setDefault('Asia/Shanghai')
 router.post('/positionRegister',async (req,res,next) => {
     const { username, password, phone, email } = req.body
     const defaultAvatar = 'http://localhost:3000/jobseekersAvatar/default.jpg'
+    const role = 'jobseeker'
     const hash = await saltPasswd.saltPasswd(password)
     await jobSeekerInstance.findOne({where:{username:username,phone:phone}}).then(async user => {
         if(user){
             res.json({code:202,msg:'该用户的手机号已经注册了,可直接登录'})
         }else{
-            await jobSeekerInstance.create({openid:'openid',username:username,password:hash,phone:phone,email:email,faceimgUrl:defaultAvatar}).then(result => {
+            await jobSeekerInstance.create({openid:'openid',username:username,password:hash,phone:phone,email:email,faceimgUrl:defaultAvatar,role:role}).then(result => {
                 if(result){
                     res.json({code:200,msg:'注册成功,你可以进行登录了'})
                 }else{
@@ -127,7 +128,7 @@ router.get('/UserinfoDetail', async (req,res,next) => {
     // 一个判断用户信息是否完善的标记
     await jobSeekerInstance.findOne({where: {id:uid}}).then(result => {
         if (result){
-            const doneUserinfo = Object.values(result.dataValues).includes(null)    // 如果包含有null的属性，则提醒用户完善信息
+            const doneUserinfo = Object.values(result.dataValues).includes(null)    // 如果包含有null的属性，返回true，则提醒用户完善信息
             res.json({code:200,userinfo:result,doneUserinfo:!doneUserinfo})
         }else{
             res.json({code:201,msg:'拉取信息失败'})
@@ -236,7 +237,6 @@ router.post('/uploadFile',fileUploader.array('file'),async (req,res,next) => {
     const { id } = req.body
     const fileOrigin = 'http://localhost:3000/jobseekersFiles/'
     const files = req.files
-    console.log(files)
     let temp = files.map(e=>{
         const uuid = uuidv4()
         let basename = path.basename(e.originalname)    //源文件名
@@ -407,7 +407,7 @@ router.get('/getPost2PositionListByUid', async (req, res, next) => {
     const { limit, page } = req.query
     // 不提供jobseekerid时，获取全部（管理员专用的查询）
     if(req.query.jobseekerId === undefined) {
-        const Allsql = `select c.id,c.positionName,b.status,a.id as jobseekerId,a.username,a.professional,a.age,a.school,a.phone,a.email,a.attachmentUrl,c.createdAt from jobseekers a left join post2positions b on a.id = b.jobSeekerId left join positions c on b.PositionId = c.id  where c.Handlestatus=2`
+        const Allsql = `select c.id,c.positionName,b.status,a.id as jobseekerId,a.username,a.professional,a.age,a.school,a.phone,a.email,a.attachmentUrl,b.createdAt from jobseekers a left join post2positions b on a.id = b.jobSeekerId left join positions c on b.PositionId = c.id  where c.Handlestatus=2`
         const AllPostedPositions = await sequelize.query(Allsql)
         const AllpostedPositionsList = AllPostedPositions[0].map( s => {
             // 审核按钮
@@ -508,7 +508,7 @@ router.get('/getPost2PositionListByUid', async (req, res, next) => {
             const createdTime = moment(e.createdAt).format('YYYY-MM-DD HH:mm:ss')
             const typeTemp = e.type === 1?'事业编':'非事业编'
             currentStatusTemp = e.positionStatus === 1 ? '在招' : '已结束'
-            return {id:e.id,positionName:e.positionName,address:e.address,requireNum:e.requireNum,type:typeTemp,age:e.age,degree:e.degree,professional:e.professional,desc:e.desc,createdTime:createdTime,deptName:e.deptName,english:e.english,currentStatus:currentStatusTemp,isCllected:true}
+            return {id:e.id,positionName:e.positionName,address:e.address,requireNum:e.requireNum,type:typeTemp,age:e.age,degree:e.degree,professional:e.professional,desc:e.desc,createdTime:createdTime,deptName:e.deptName,english:e.english,currentStatus:currentStatusTemp,isCollected:true}
         })
         const PostedpageList = postedPositionsList.filter((item,index)=>index < limit * page && index >= limit * (page - 1))
         const CollectedpageList = collectedPositionsList.filter((item,index)=>index < limit * page && index >= limit * (page - 1))
