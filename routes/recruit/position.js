@@ -16,8 +16,9 @@ const multer = require('multer')
 const moment = require('moment-timezone')
 const saltPasswd = require('../../utils/saltPasswd')
 const comparePasswd = require('../../utils/saltPasswd')
-const { Op } = require('sequelize')
-const { positionInstance, jobSeekerInstance,post2positionInstance, get2CollectInstance } = require('../../database/models/associate');
+const { positionInstance, jobSeekerInstance,post2positionInstance, get2CollectInstance } = require('../../database/models/associate')
+const Message = require('../../models/message')
+const { DataTypes, Op } = require('sequelize')
 // 设置时区
 moment.tz.setDefault('Asia/Shanghai')
 
@@ -576,6 +577,24 @@ router.delete('/deletePost2Position', async (req,res,next) => {
         }
     })
 
+})
+
+
+// 求职者接收消息
+router.post('/getMsgNum', async (req, res, next) => {
+    const { receive_id, limit, page } = req.body
+    await Message(sequelize,DataTypes).findAll({where:{receive_id:receive_id,is_read:0}}).then(result => {
+        if(result) {
+            const resultMsgList = result.map(e => {
+                let send_dateTemp = moment(e.send_date).format('YYYY-MM-DD HH:mm:ss')
+                return Object.assign({},e.dataValues,{format_send_date:send_dateTemp})
+            })
+            const pageList = resultMsgList.filter((item,index)=>index < limit * page && index >= limit * (page - 1))
+            res.json({code:200,msg:'获取消息成功',msgList:pageList,total:resultMsgList.length})
+        }else{
+            res.json({code:201,msg:'获取消息失败'})
+        }
+    })
 })
 
 

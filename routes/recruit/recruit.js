@@ -2,6 +2,9 @@ const express = require('express')
 const router = express.Router()
 const moment = require('moment-timezone')
 const { positionInstance, jobSeekerInstance,post2positionInstance } = require('../../database/models/associate')
+const sequelize = require('../../database/connection')
+const Message = require('../../models/message')
+const { DataTypes, Op } = require('sequelize')
 // 设置时区
 moment.tz.setDefault('Asia/Shanghai')
 
@@ -121,4 +124,20 @@ router.post('/updatePosition',async (req,res,next) => {
         }    
     })
 })
+
+// 给求职者发送消息
+router.post('/sendMessage', async (req, res, next) => {
+    const { send_id, receive_id, content } = req.body
+    // 发送时间
+    const send_date = new Date()
+    await Message(sequelize,DataTypes).create({send_id:send_id,receive_id:receive_id,send_date:send_date,content:content,is_read:0}).then((result) =>{
+        if(result){
+            res.json({code:200,msg:'发送信息成功'})
+        }else{
+            res.json({code:201,msg:'发送消息失败'})
+        }
+    })
+})
+
+
 module.exports = router
