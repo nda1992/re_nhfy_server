@@ -347,18 +347,27 @@ router.get('/getPositionList',async (req,res,next) => {
             // 已经收藏的岗位id
             const cids = collectedPositions.map( v=> v.PositionId)
             positionList.forEach(e => {
+                let createTime = moment(e.createdAt).format('YYYY-MM-DD HH:mm:ss')
+                // 也返回一个YYYY-MM-DD格式的时间
+                let simpleDate = moment(e.createdAt).format('YYYY-MM-DD')
+                // 招聘状态
+                let statusTemp = ''
+                e.status===1 ? statusTemp='在招' : statusTemp = '已结束'
+                // 岗位类别
+                let typeTemp = ''
+                e.type===1 ? typeTemp='事业编' :typeTemp='非事业编'
                 // 说明该jobseeker已经投递了该岗位的简历
                 if (pids.includes(e.id)){
                     if (cids.includes(e.id)){
-                        resultTemp.push(Object.assign({},e.dataValues,{isPosted:true, isCollected:true}))
+                        resultTemp.push(Object.assign({},e.dataValues,{isPosted:true, isCollected:true},{type:typeTemp,createDate:createTime,simpleDate:simpleDate,status:statusTemp}))
                     }else{
-                        resultTemp.push(Object.assign({},e.dataValues,{isPosted:true, isCollected:false}))
+                        resultTemp.push(Object.assign({},e.dataValues,{isPosted:true, isCollected:false},{type:typeTemp,createDate:createTime,simpleDate:simpleDate,status:statusTemp}))
                     }
                 }else{
                     if (cids.includes(e.id)){
-                        resultTemp.push(Object.assign({},e.dataValues,{isPosted:false, isCollected:true}))
+                        resultTemp.push(Object.assign({},e.dataValues,{isPosted:false, isCollected:true},{type:typeTemp,createDate:createTime,simpleDate:simpleDate,status:statusTemp}))
                     }else{
-                        resultTemp.push(Object.assign({},e.dataValues,{isPosted:false, isCollected:false}))
+                        resultTemp.push(Object.assign({},e.dataValues,{isPosted:false, isCollected:false},{type:typeTemp,createDate:createTime,simpleDate:simpleDate,status:statusTemp}))
                     }
                 }
             })
@@ -517,9 +526,9 @@ router.post('/sendMessage', async (req, res, next) => {
 
 // 求职者回复消息
 router.post('/replyMessage', async (req, res, next) => {
-    const { receive_id, send_id, content, send_date, is_read, remove_receive_id, remove_send_id } = req.body
+    const { receive_id, send_id, content, send_date, is_read, remove_receive_id, remove_send_id, replycontent } = req.body
     const send_dateTemp = moment(send_date).format('YYYY-MM-DD HH:mm:ss')
-    await Message(sequelize,DataTypes).create({receive_id:receive_id,content:content,send_id:send_id,send_date:send_dateTemp,is_read:is_read,remove_receive_id:remove_receive_id,remove_send_id:remove_send_id}).then(result => {
+    await Message(sequelize,DataTypes).create({receive_id:receive_id,content:content,replycontent:replycontent,send_id:send_id,send_date:send_dateTemp,is_read:is_read,remove_receive_id:remove_receive_id,remove_send_id:remove_send_id}).then(result => {
         if(result) {
             res.json({code:200,msg:'回复消息成功'})
         }else{

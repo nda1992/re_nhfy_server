@@ -21,6 +21,7 @@ module.exports = (sequelize, DataTypes) => {
     is_read: DataTypes.INTEGER,
     remove_receive_id: DataTypes.INTEGER,
     remove_send_id: DataTypes.INTEGER,
+    replycontent: DataTypes.TEXT,
     content: DataTypes.TEXT
   }, {
     sequelize,
