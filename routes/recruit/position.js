@@ -18,7 +18,7 @@ const saltPasswd = require('../../utils/saltPasswd')
 const comparePasswd = require('../../utils/saltPasswd')
 const { positionInstance, jobSeekerInstance,post2positionInstance, get2CollectInstance } = require('../../database/models/associate')
 const Message = require('../../models/message')
-const { DataTypes, Op } = require('sequelize')
+const { DataTypes, Op, where } = require('sequelize')
 // 设置时区
 moment.tz.setDefault('Asia/Shanghai')
 
@@ -578,12 +578,43 @@ router.delete('/deletePost2Position', async (req,res,next) => {
 
 })
 
+// 给求职者发送消息
+router.post('/sendMessage', async (req, res, next) => {
+    const { msgList } = req.body
+    await Message(sequelize,DataTypes).bulkCreate(msgList).then((result) =>{
+        if(result){
+            res.json({code:200,msg:'发送信息成功'})
+        }else{
+            res.json({code:201,msg:'发送消息失败'})
+        }
+    })
+})
 
-// 求职者接收消息
-router.post('/getMsgNum', async (req, res, next) => {
+// 求职者接收接收到的所有消息
+router.post('/getReceiveMsg', async (req, res, next) => {
     const { receive_id, limit, page } = req.body
-    await Message(sequelize,DataTypes).findAll({where:{receive_id:receive_id,is_read:0}}).then(result => {
+    // 未阅读的消息条数
+    let num = 0
+    await Message(sequelize,DataTypes).findAll({where:{receive_id:receive_id}}).then(result => {
         if(result) {
+            const resultMsgList = result.map(e => {
+                let send_dateTemp = moment(e.send_date).format('YYYY-MM-DD HH:mm:ss')
+                if(e.is_read===0) num++
+                return Object.assign({},e.dataValues,{format_send_date:send_dateTemp})
+            })
+            const pageList = resultMsgList.filter((item,index)=>index < limit * page && index >= limit * (page - 1))
+            res.json({code:200,msg:'获取消息成功',msgList:pageList,total:resultMsgList.length,no_read_num:num})
+        }else{
+            res.json({code:201,msg:'获取消息失败'})
+        }
+    })
+})
+
+// 求职者发送的所有消息
+router.post('/getSendMsg', async (req, res, next) => {
+    const { send_id, limit, page } = req.body
+    await Message(sequelize,DataTypes).findAll({where:{send_id:send_id}}).then(result => {
+        if(result){
             const resultMsgList = result.map(e => {
                 let send_dateTemp = moment(e.send_date).format('YYYY-MM-DD HH:mm:ss')
                 return Object.assign({},e.dataValues,{format_send_date:send_dateTemp})
@@ -596,5 +627,20 @@ router.post('/getMsgNum', async (req, res, next) => {
     })
 })
 
+// 根据jobseekerid更新消息为已读
+router.post('/updateIsread', async (req, res, next) => {
+    const { receive_id } = req.body
+    const queryid = parseInt(receive_id)
+    console.log(typeof queryid)
+    // 阅读时间
+    const read_date = moment(new Date()).format('YYYY-MM-DD HH:mm:ss')
+    await Message(sequelize,DataTypes).update({is_read:1,read_date:read_date},{where:{receive_id:queryid}}).then(result => {
+        if(result) {
+            res.json({code:200,msg:'更新消息成功'})
+        }else{
+            res.json({code:201,msg:'更新消息失败'})
+        }
+    })
+})
 
 module.exports = router
