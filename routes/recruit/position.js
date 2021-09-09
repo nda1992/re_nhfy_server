@@ -22,7 +22,6 @@ const { positionInstance, jobSeekerInstance,post2positionInstance, get2CollectIn
 moment.tz.setDefault('Asia/Shanghai')
 
 
-
 // 求职者注册
 router.post('/positionRegister',async (req,res,next) => {
     const { username, password, phone, email } = req.body

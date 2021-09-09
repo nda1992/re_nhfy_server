@@ -11,12 +11,12 @@ const newsRouter = require('./routes/news/news')
 const recruitRouter = require('./routes/recruit/recruit')
 const positionRouter = require('./routes/recruit/position')
 const reportmakeRouter = require('./routes/reportmake/reportmake')
-// const specialQueryRouter = require('./routes/reportmake/specialQuery')
+const specialQueryRouter = require('./routes/reportmake/specialQuery')
 // 查询主题的相关路由
-// const revenueRouter = require('./routes/QueryTheam/revenue/revenue')
-// const operationRouter = require('./routes/QueryTheam/operation/operation')
-// const rankRouter = require('./routes/QueryTheam/rank/rank')
-// const othersRouter = require('./routes/QueryTheam/others/others')
+const revenueRouter = require('./routes/QueryTheam/revenue/revenue')
+const operationRouter = require('./routes/QueryTheam/operation/operation')
+const rankRouter = require('./routes/QueryTheam/rank/rank')
+const othersRouter = require('./routes/QueryTheam/others/others')
 const app = express();
 
 const {varifyToken} = require('./utils/token')
@@ -73,12 +73,12 @@ app.use('/news',newsRouter);
 app.use('/recruit',recruitRouter);
 app.use('/position',positionRouter);
 app.use('/reportmake',reportmakeRouter)
-// app.use('/reportmake/specialQuery',specialQueryRouter)
+app.use('/reportmake/specialQuery',specialQueryRouter)
 // 主题查询的路由
-// app.use('/QueryTheam/operation',operationRouter)
-// app.use('/QueryTheam/revenue',revenueRouter)
-// app.use('/QueryTheam/rank',rankRouter)
-// app.use('/QueryTheam/others',othersRouter)
+app.use('/QueryTheam/operation',operationRouter)
+app.use('/QueryTheam/revenue',revenueRouter)
+app.use('/QueryTheam/rank',rankRouter)
+app.use('/QueryTheam/others',othersRouter)
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
   next(createError(404));
