@@ -44,36 +44,6 @@ router.post('/positionRegister',async (req,res,next) => {
     })
 })
 
-// 求职者信息完善
-router.post('/jobSeekerInfoComplete',async (req,res,next) => {
-    const data = req.body
-    // 所有的注册用户均为jobseeker角色
-    const role = 'jobseeker'
-    // 密码加密
-    const hash = await saltPasswd.saltPasswd(data.password)
-    // 登录次数
-    const loginNum = 0
-    await jobSeekerInstance.findOne({where:{openid:data.openid}}).then( async result => {
-        // 用户不存在，新建
-        if(!result){
-            await jobSeekerInstance.create({openid:data.openid,
-                username:data.username,password:hash,faceimgUrl:data.faceimgUrl,
-                phone:data.phone,sex:data.sex,age:data.age,birthday:data.birthday,
-                nation:data.nation,degree:data.degree,professional:data.professional,
-                undergraduateTime:data.undergraduateTime,attachmentUrl:data.attachmentUrl,
-                role:role,email:data.email,address:data.address,school:data.school,loginNum:loginNum}).then( user => {
-                if(user){
-                    res.json({code:200, msg:'注册成功'})
-                }else{
-                    res.json({code:201, msg:'注册失败'})
-                }
-            } )
-        }else{
-            res.json({code:202, msg:'该用户已经注册了，可直接进行登录'})
-        }
-    })
-})
-
 // jobseeker登录
 router.post('/positionLogin',async (req,res,next) => {
     const { account, password } = req.body
@@ -125,9 +95,9 @@ router.post('/positionLogin',async (req,res,next) => {
 //根据jobseekerid拉取用户的所有信息
 router.get('/UserinfoDetail', async (req,res,next) => {
     const { uid } = req.query
-    // 一个判断用户信息是否完善的标记
     await jobSeekerInstance.findOne({where: {id:uid}}).then(result => {
         if (result){
+            // 一个判断用户信息是否完善的标记
             const doneUserinfo = Object.values(result.dataValues).includes(null)    // 如果包含有null的属性，返回true，则提醒用户完善信息
             res.json({code:200,userinfo:result,doneUserinfo:!doneUserinfo})
         }else{
@@ -256,7 +226,6 @@ router.post('/uploadFile',fileUploader.array('file'),async (req,res,next) => {
     })
 })
 
-
 // 查看docx文档
 router.post('/getResumeFile', async (req, res, next) => {
     const { url } = req.body
@@ -314,8 +283,6 @@ router.post('/handleCollect', async (req,res,next) => {
         })
     }
 })
-
-
 
 // 用户投递简历
 router.post('/postPosition',async (req,res,next) => {
@@ -400,7 +367,6 @@ router.get('/getPositionList',async (req,res,next) => {
     }
  })
 
-
 // 获取post2positions、get2collects对应的jobseekers和positions
 router.get('/getPost2PositionListByUid', async (req, res, next) => {
     const queryid = parseInt(req.query.jobseekerId)
@@ -436,47 +402,6 @@ router.get('/getPost2PositionListByUid', async (req, res, next) => {
         })
         const pageList = AllpostedPositionsList.filter((item,index)=>index < limit * page && index >= limit * (page - 1))
         res.json({code:200,msg:'数据获取成功',items:pageList,total:AllpostedPositionsList.length})
-        // await positionInstance.findAll({include:jobSeekerInstance}).then((result) =>{
-        //     const items = result.filter(item => item.jobSeekers.length !== 0 && item.Handlestatus === 2).map( e => {
-        //         // 遍历该岗位的所有已经投递简历的求职者
-        //         const positions = e.jobSeekers.map( s => {
-        //         // 审核按钮
-        //         let Switch = false
-        //         // 投递时间
-        //         const createdTime = moment(s.post2position.createdAt).format('YYYY-MM-DD HH:mm:ss')
-        //         const jobseekerId = s.id
-        //         const username = s.username
-        //         const professional = s.professional
-        //         const school = s.school
-        //         const phone = s.phone
-        //         const email = s.email
-        //         const attachmentUrl = s.attachmentUrl
-        //         let statusTemp = ''
-        //         if(s.post2position.status===1) {
-        //             statusTemp = '未审核'
-        //         }else if (s.post2position.status===2){
-        //             statusTemp = '已审核通过'
-        //             Switch = true
-        //         }else if (s.post2position.status===3) {
-        //             statusTemp = '审核未通过'
-        //         } else if (s.post2position.status===4) {
-        //             statusTemp = '求职者已确认'
-        //         }
-        //         return {id:e.id,jobseekerId:jobseekerId,createdTime:createdTime,positionName:e.positionName,username:username,professional:professional,school:school,phone:phone,email:email,attachmentUrl:attachmentUrl,status:statusTemp,Switch:Switch}
-        //         })
-        //         return positions
-        //     })
-        //     const resultPositions = []
-        //     for(let i of items) {
-        //         for(let j of i){
-        //             resultPositions.push(j)
-        //         }
-        //     }
-        //     const pageList = resultPositions.filter((item,index)=>index < limit * page && index >= limit * (page - 1))
-        //     res.json({code:200,msg:'数据获取成功',items:pageList,total:resultPositions.length})
-        //     // const items = result.filter(item => item.jobSeekers.length !== 0 && item.Handlestatus === 2)
-        //     // res.json({items:resultPositions})
-        // })
     }else{
         /*因为涉及了三表关联，所以使用了sequelize提供的原生SQL查询，当然，这里不使用sequelize提供的表关联也是可以的（而且更方便），因为从前端传递过来的uid和pid都是实实在在存在的数据，所以在对get2collectd
         和post2positions这两个表进行create即可，不用担心数据不存在的问题。所以可以不用配置关联，这样反而更方便一些，我这里懒得修改了*/ 
