@@ -19,6 +19,8 @@ module.exports = (sequelize, DataTypes) => {
     send_date: DataTypes.DATE,
     read_date: DataTypes.DATE,
     is_read: DataTypes.INTEGER,
+    remove_receive_id: DataTypes.INTEGER,
+    remove_send_id: DataTypes.INTEGER,
     content: DataTypes.TEXT
   }, {
     sequelize,

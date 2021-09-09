@@ -515,12 +515,25 @@ router.post('/sendMessage', async (req, res, next) => {
     })
 })
 
+// 求职者回复消息
+router.post('/replyMessage', async (req, res, next) => {
+    const { receive_id, send_id, content, send_date, is_read, remove_receive_id, remove_send_id } = req.body
+    const send_dateTemp = moment(send_date).format('YYYY-MM-DD HH:mm:ss')
+    await Message(sequelize,DataTypes).create({receive_id:receive_id,content:content,send_id:send_id,send_date:send_dateTemp,is_read:is_read,remove_receive_id:remove_receive_id,remove_send_id:remove_send_id}).then(result => {
+        if(result) {
+            res.json({code:200,msg:'回复消息成功'})
+        }else{
+            res.json({code:201,msg:'回复消息失败'})
+        }
+    })
+})
+
 // 求职者接收接收到的所有消息
 router.post('/getReceiveMsg', async (req, res, next) => {
     const { receive_id, limit, page } = req.body
     // 未阅读的消息条数
     let num = 0
-    await Message(sequelize,DataTypes).findAll({where:{receive_id:receive_id}}).then(result => {
+    await Message(sequelize,DataTypes).findAll({where:{receive_id:receive_id,remove_receive_id:{[Op.ne]:receive_id}}}).then(result => {
         if(result) {
             const resultMsgList = result.map(e => {
                 let send_dateTemp = moment(e.send_date).format('YYYY-MM-DD HH:mm:ss')
@@ -564,6 +577,31 @@ router.post('/updateIsread', async (req, res, next) => {
             res.json({code:200,msg:'更新消息成功'})
         }else{
             res.json({code:201,msg:'更新消息失败'})
+        }
+    })
+})
+
+// receive_id删除一条信息
+router.post('/receiveRemoveMsg',async (req,res,next) => {
+    const { id, receive_id } = req.body
+    await Message(sequelize,DataTypes).update({remove_receive_id:receive_id},{where:{id:id}}).then(result => {
+        if(result){
+            res.json({code:200,msg:'已经删除消息'})
+        }else{
+            res.json({code:201,msg:'删除消息失败'})
+        }
+    })
+})
+
+// 接收者删除所有消息
+router.post('/removeAllReceiveMsg',async (req, res, next) => {
+    const { msgList } = req.body
+    console.log(msgList)
+    await Message(sequelize, DataTypes).bulkCreate(msgList, {updateOnDuplicate:["remove_receive_id"]}).then(result => {
+        if(result) {
+            res.json({code:200,msg:'已经删除所有消息'})
+        }else{
+            res.json({code:201,msg:'删除消息失败'})
         }
     })
 })
