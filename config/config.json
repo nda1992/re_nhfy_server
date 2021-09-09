@@ -4,20 +4,23 @@
     "password": "123456",
     "database": "re_nhfy",
     "host": "127.0.0.1",
-    "dialect": "mysql"
+    "dialect": "mysql",
+    "charset": "UTF8MB4_BIN"
   },
   "test": {
     "username": "root",
     "password": "123456",
     "database": "re_nhfy",
     "host": "127.0.0.1",
-    "dialect": "mysql"
+    "dialect": "mysql",
+    "charset": "UTF8MB4_BIN"
   },
   "production": {
     "username": "root",
     "password": "123456",
     "database": "re_nhfy",
     "host": "127.0.0.1",
-    "dialect": "mysql"
+    "dialect": "mysql",
+    "charset": "UTF8MB4_BIN"
   }
 }
