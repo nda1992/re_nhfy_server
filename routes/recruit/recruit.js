@@ -125,7 +125,45 @@ router.post('/updatePosition',async (req,res,next) => {
     })
 })
 
+// 管理员接收到的消息
+router.post('/getReceiveMsg2Admin', async (req, res, next) => {
+    const { receive_id, limit, page } = req.body
+    // 未阅读的消息条数
+    let num = 0
+    const sql = `select a.*,b.username,b.faceimgUrl from (
+        select * from messages where receive_id=${receive_id} and remove_receive_id<>${receive_id}
+        )a left join jobseekers b on a.send_id=b.id`
+    const result = await sequelize.query(sql)
+    if(result) {
+        const resultMsgList = result[0].map(e => {
+            let send_dateTemp = moment(e.send_date).format('YYYY-MM-DD HH:mm:ss')
+            if(e.is_read===0) num++
+            return Object.assign({},e,{format_send_date:send_dateTemp})
+        })
+        const pageList = resultMsgList.filter((item,index)=>index < limit * page && index >= limit * (page - 1))
+        res.json({code:200,msg:'获取消息成功',msgList:pageList,total:resultMsgList.length,no_read_num:num})
+    }else{
+        res.json({code:201,msg:'获取消息失败'})
+    }
+})
 
-
+// 管理员已发送的所有消息
+router.post('/getSendMsg2Admin', async (req, res, next) => {
+    const { send_id, limit, page } = req.body
+    const sql = `select a.*,b.username,b.faceimgUrl from (
+        select * from messages where send_id=${send_id} and remove_send_id<>${send_id}
+        )a left join jobseekers b on a.receive_id=b.id`
+    const result = await sequelize.query(sql)
+    if(result){
+        const resultMsgList = result[0].map(e => {
+            let send_dateTemp = moment(e.send_date).format('YYYY-MM-DD HH:mm:ss')
+            return Object.assign({},e,{format_send_date:send_dateTemp})
+        })
+        const pageList = resultMsgList.filter((item,index)=>index < limit * page && index >= limit * (page - 1))
+        res.json({code:200,msg:'获取消息成功',msgList:pageList,total:resultMsgList.length})
+    }else{
+        res.json({code:201,msg:'获取消息失败'})
+    }
+})
 
 module.exports = router
