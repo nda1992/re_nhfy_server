@@ -21,6 +21,8 @@ const post2positionInstance = sequelize.define('post2position',{
     isPosted: {type: Sequelize.INTEGER},
     // 确认参加笔试和面试：1=参加，0=不参加
     confirm: {type: Sequelize.INTEGER},
+    // 审核通过时间
+    approveDate: {type: Sequelize.DATE}
     },{tableName:'post2positions'}
 )
 

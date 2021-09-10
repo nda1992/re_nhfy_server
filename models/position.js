@@ -26,7 +26,8 @@ module.exports = (sequelize, DataTypes) => {
     professional: DataTypes.STRING,
     Handlestatus: DataTypes.INTEGER,
     status: DataTypes.INTEGER,
-    desc: DataTypes.TEXT
+    desc: DataTypes.TEXT,
+    contactPhone: DataTypes.STRING
   }, {
     sequelize,
     modelName: 'Position',

@@ -331,7 +331,7 @@ router.get('/getPositionList',async (req,res,next) => {
                 break
         }
         // isPosted=false:未投递，isPosted=true：已投递
-        return { id:e.id,positionName:e.positionName,deptName:e.deptName,address:e.address,requireNum:e.requireNum,type:typeTemp,Switch:Switch,status:statusTemp,Handlestatus:HandlestatusTemp,userCode:e.userCode,age:e.age,english:e.english,professional:e.professional,desc:e.desc,degree:e.degree,createDate:createTime,simpleDate:simpleDate,isPosted:false,isCollected:false}
+        return { id:e.id,positionName:e.positionName,deptName:e.deptName,address:e.address,requireNum:e.requireNum,type:typeTemp,Switch:Switch,status:statusTemp,Handlestatus:HandlestatusTemp,userCode:e.userCode,age:e.age,english:e.english,professional:e.professional,desc:e.desc,degree:e.degree,contactPhone:e.contactPhone,createDate:createTime,simpleDate:simpleDate,isPosted:false,isCollected:false}
     })
     if (jobseekerId === undefined || jobseekerId === '' || jobseekerId === null) {
         const pageList = positions.filter((item,index)=>index < limit * page && index >= limit * (page - 1))
@@ -382,13 +382,14 @@ router.get('/getPost2PositionListByUid', async (req, res, next) => {
     const { limit, page } = req.query
     // 不提供jobseekerid时，获取全部（管理员专用的查询）
     if(req.query.jobseekerId === undefined) {
-        const Allsql = `select c.id,c.positionName,b.status,a.id as jobseekerId,a.username,a.professional,a.age,a.school,a.phone,a.email,a.attachmentUrl,b.createdAt from jobseekers a left join post2positions b on a.id = b.jobSeekerId left join positions c on b.PositionId = c.id  where c.Handlestatus=2`
+        const Allsql = `select c.id,c.positionName,b.status,b.approveDate,a.id as jobseekerId,a.username,a.professional,a.age,a.school,a.phone,a.email,a.attachmentUrl,b.createdAt from jobseekers a left join post2positions b on a.id = b.jobSeekerId left join positions c on b.PositionId = c.id  where c.Handlestatus=2`
         const AllPostedPositions = await sequelize.query(Allsql)
         const AllpostedPositionsList = AllPostedPositions[0].map( s => {
             // 审核按钮
             let Switch = false
             // 投递时间
             const createdTime = moment(s.createdAt).format('YYYY-MM-DD HH:mm:ss')
+            const approveDate = moment(s.approveDate).format('YYYY-MM-DD HH:mm:ss')
             const jobseekerId = s.jobseekerId
             const username = s.username
             const professional = s.professional
@@ -407,22 +408,23 @@ router.get('/getPost2PositionListByUid', async (req, res, next) => {
             } else if (s.status===4) {
                 statusTemp = '求职者已确认'
             }
-            return {id:s.id,jobseekerId:jobseekerId,createdTime:createdTime,positionName:s.positionName,username:username,professional:professional,school:school,phone:phone,email:email,attachmentUrl:attachmentUrl,status:statusTemp,Switch:Switch}
+            return {id:s.id,jobseekerId:jobseekerId,createdTime:createdTime,approveDate:approveDate,positionName:s.positionName,username:username,professional:professional,school:school,phone:phone,email:email,attachmentUrl:attachmentUrl,status:statusTemp,Switch:Switch}
         })
         const pageList = AllpostedPositionsList.filter((item,index)=>index < limit * page && index >= limit * (page - 1))
         res.json({code:200,msg:'数据获取成功',items:pageList,total:AllpostedPositionsList.length})
     }else{
         /*因为涉及了三表关联，所以使用了sequelize提供的原生SQL查询，当然，这里不使用sequelize提供的表关联也是可以的（而且更方便），因为从前端传递过来的uid和pid都是实实在在存在的数据，所以在对get2collectd
         和post2positions这两个表进行create即可，不用担心数据不存在的问题。所以可以不用配置关联，这样反而更方便一些，我这里懒得修改了*/ 
-        // 投递的岗位列表
-        const Collectedsql = `select c.status as positionStatus,c.id,c.positionName,c.address,c.requireNum,c.type,c.age,c.degree,c.professional,c.desc,b.createdAt,c.deptName,c.english from jobseekers a left join get2collects b on a.id = b.jobSeekerId left join positions c on b.PositionId = c.id  where a.id = ${queryid} and c.Handlestatus<>1`
         // 收藏的岗位列表
-        const Postedsql = `select c.status as positionStatus,c.id,c.positionName,c.address,c.requireNum,c.type,c.age,c.degree,c.professional,c.desc,b.status,b.confirm,b.createdAt,c.deptName,c.english from jobseekers a left join post2positions b on a.id = b.jobSeekerId left join positions c on b.PositionId = c.id  where a.id = ${queryid} and c.Handlestatus<>1`
+        const Collectedsql = `select c.status as positionStatus,c.id,c.positionName,c.address,c.requireNum,c.type,c.age,c.degree,c.professional,c.desc,b.createdAt,c.deptName,c.english from jobseekers a left join get2collects b on a.id = b.jobSeekerId left join positions c on b.PositionId = c.id  where a.id = ${queryid} and c.Handlestatus<>1`
+        // 投递的岗位列表
+        const Postedsql = `select b.approveDate,c.status as positionStatus,c.id,c.positionName,c.address,c.requireNum,c.type,c.age,c.degree,c.professional,c.desc,b.status,b.confirm,b.createdAt,c.deptName,c.english from jobseekers a left join post2positions b on a.id = b.jobSeekerId left join positions c on b.PositionId = c.id  where a.id = ${queryid} and c.Handlestatus<>1`
         const postedPositions = await sequelize.query(Postedsql)
         const CollectedPositions = await sequelize.query(Collectedsql)
         // 对投递的岗位列表进行处理
         const postedPositionsList = postedPositions[0].map( e => {
             const createdTime = moment(e.createdAt).format('YYYY-MM-DD HH:mm:ss')
+            const approveDate = moment(e.approveDate).format('YYYY-MM-DD HH:mm:ss')
             const typeTemp = e.type === 1?'事业编':'非事业编'
             let statusTemp = ''
             if (e.status===1 && e.confirm===0){
@@ -435,7 +437,7 @@ router.get('/getPost2PositionListByUid', async (req, res, next) => {
                 statusTemp = '审核未通过'
             }
             currentStatusTemp = e.positionStatus === 1 ? '在招' : '已结束' 
-            return {id:e.id,positionName:e.positionName,address:e.address,requireNum:e.requireNum,type:typeTemp,age:e.age,degree:e.degree,professional:e.professional,status:statusTemp,desc:e.desc,createdTime:createdTime,deptName:e.deptName,english:e.english,currentStatus:currentStatusTemp}
+            return {id:e.id,positionName:e.positionName,address:e.address,requireNum:e.requireNum,type:typeTemp,age:e.age,degree:e.degree,professional:e.professional,status:statusTemp,desc:e.desc,createdTime:createdTime,approveDate:approveDate,deptName:e.deptName,english:e.english,currentStatus:currentStatusTemp}
         })
         // 对收藏的岗位列表进行处理
         const collectedPositionsList = CollectedPositions[0].map(e => {
@@ -478,19 +480,21 @@ router.get('/confirmStauts',async (req, res, next) => {
 // 管理员审核求职者的简历状态
 router.post('/setPositionStatus',async (req,res,next) => {
     const { id, jobseekerId, Switch } = req.body
+    // 审核通过时间
+    const approveDate = new Date()
     // Switch=true:已阅读，审核通过，Switch=false：阅读审核未通过
     if(!Switch){
         await post2positionInstance.update({ status: 3 },{where: {PositionId: id, jobSeekerId: jobseekerId}}).then((result) => {
             if(result){
-                res.json({code: 200, msg:'已更新状态'})
+                res.json({code: 200, msg:'状态已更新'})
             }else{
                 res.json({code: 201, msg:'更新状态失败'})
             }
         })
     }else{
-        await post2positionInstance.update({ status: 2 },{where: {PositionId: id, jobSeekerId: jobseekerId}}).then((result) => {
+        await post2positionInstance.update({ status: 2, approveDate: approveDate },{where: {PositionId: id, jobSeekerId: jobseekerId}}).then((result) => {
             if(result){
-                res.json({code: 200, msg:'已更新状态,已发送通知'})
+                res.json({code: 200, msg:'状态已更新,已通知通知求职者'})
             }else{
                 res.json({code: 201, msg:'更新状态失败'})
             }
@@ -560,7 +564,7 @@ router.post('/getReceiveMsg', async (req, res, next) => {
 // 求职者发送的所有消息
 router.post('/getSendMsg', async (req, res, next) => {
     const { send_id, limit, page } = req.body
-    await Message(sequelize,DataTypes).findAll({where:{send_id:send_id}}).then(result => {
+    await Message(sequelize,DataTypes).findAll({where:{send_id:send_id,remove_send_id:{[Op.ne]:send_id}}}).then(result => {
         if(result){
             const resultMsgList = result.map(e => {
                 let send_dateTemp = moment(e.send_date).format('YYYY-MM-DD HH:mm:ss')
@@ -602,17 +606,39 @@ router.post('/receiveRemoveMsg',async (req,res,next) => {
     })
 })
 
-// 接收者删除所有消息
+// 接收者删除所有接收到的消息
 router.post('/removeAllReceiveMsg',async (req, res, next) => {
     const { msgList } = req.body
-    console.log(msgList)
     await Message(sequelize, DataTypes).bulkCreate(msgList, {updateOnDuplicate:["remove_receive_id"]}).then(result => {
         if(result) {
-            res.json({code:200,msg:'已经删除所有消息'})
+            res.json({code:200,msg:'已删除所有已收到的消息'})
         }else{
             res.json({code:201,msg:'删除消息失败'})
         }
     })
 })
 
+// 求职者删除他发送的某条消息
+router.post('/removeSendMsg', async (req, res, next) => {
+    const { id, send_id } = req.body
+    await Message(sequelize,DataTypes).update({remove_send_id:send_id},{where:{id:id}}).then(result => {
+        if(result){
+            res.json({code:200,msg:'删除消息成功'})
+        }else{
+            res.json({code:201,msg:'删除消息失败'})
+        }
+    })
+})
+
+// 求职者删除所有已发送的消息
+router.post('/removeAllSendMsg', async (req, res, next) => {
+    const { msgList } = req.body
+    await Message(sequelize, DataTypes).bulkCreate(msgList, {updateOnDuplicate:["remove_send_id"]}).then(result => {
+        if(result) {
+            res.json({code:200,msg:'已删除所有已发送的消息'})
+        }else{
+            res.json({code:201,msg:'删除消息失败'})
+        }
+    })
+})
 module.exports = router

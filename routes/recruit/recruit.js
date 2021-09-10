@@ -54,7 +54,7 @@ router.get('/getPositionList',async (req,res,next) => {
 // 新增岗位
 router.post('/addPosition',async (req,res,next) => {
     const data = req.body
-    await positionInstance.create({positionName: data.positionName,deptName: data.deptName,address: data.address,requireNum: data.requireNum,type: data.type,userCode: data.userCode,age: data.age,degree: data.degree,english: data.english,professional:data.professional,status: data.status,Handlestatus: data.Handlestatus,desc:data.desc}).then( result => {
+    await positionInstance.create({positionName: data.positionName,deptName: data.deptName,address: data.address,requireNum: data.requireNum,type: data.type,userCode: data.userCode,age: data.age,degree: data.degree,english: data.english,professional:data.professional,status: data.status,Handlestatus: data.Handlestatus,contactPhone:data.contactPhone,desc:data.desc}).then( result => {
         if (result) {
             res.json({code:200,msg:'添加成功'})
         }else{
