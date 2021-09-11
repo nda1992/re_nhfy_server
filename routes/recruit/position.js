@@ -7,11 +7,11 @@
 const express = require('express')
 const router = express.Router()
 const mammoth = require('mammoth')
-const docxConverter = require('docx-pdf');
+const docxConverter = require('docx-pdf')
 const sequelize = require('../../database/connection')
 const path = require('path')
 const fs = require('fs')
-const { v4: uuidv4 } = require('uuid');
+const { v4: uuidv4 } = require('uuid')
 const multer = require('multer')
 const moment = require('moment-timezone')
 const saltPasswd = require('../../utils/saltPasswd')
@@ -110,7 +110,7 @@ router.get('/UserinfoDetail', async (req,res,next) => {
 router.post('/updateUserinfo',async (req,res,next) => {
     const data = req.body
     const { basic } = req.body
-    const returnData = { username:data.username,avatar:data.faceimgUrl,email: data.email,phone: data.phone }
+    const returnData = { username:data.username,avatar:data.avatar,email: data.email,phone: data.phone }
     // 更新详细信息
     if(basic){
         await jobSeekerInstance.update({sex:data.sex,age:data.age,birthday:data.birthday,nation:data.nation,address:data.address,degree:data.degree,school:data.school,professional: data.professional,undergraduateTime:data.undergraduateTime,faceimgUrl: data.faceimgUrl,attachmentUrl:data.attachmentUrl},{where:{id:data.id}}).then((result) => {
@@ -299,7 +299,7 @@ router.post('/postPosition',async (req,res,next) => {
 
 // 获取岗位列表
 router.get('/getPositionList',async (req,res,next) => {
-    const { role, limit, page, jobseekerId } = req.query
+    const { limit, page, jobseekerId } = req.query
     // jobseekerId为空时，表示用户还没有登录，直接返回所有的岗位列表
     const positionList = await positionInstance.findAll({where: {Handlestatus:2}})  //只查询出Handlestatus=2（表示已通过审核的岗位）
     let positions = positionList.map( e => {
@@ -335,6 +335,7 @@ router.get('/getPositionList',async (req,res,next) => {
     })
     if (jobseekerId === undefined || jobseekerId === '' || jobseekerId === null) {
         const pageList = positions.filter((item,index)=>index < limit * page && index >= limit * (page - 1))
+        console.log(pageList)
         res.json({code:200,msg:'获取岗位列表成功',positions:pageList,total:positions.length})
     } else {
         let resultTemp = []
@@ -494,7 +495,7 @@ router.post('/setPositionStatus',async (req,res,next) => {
     }else{
         await post2positionInstance.update({ status: 2, approveDate: approveDate },{where: {PositionId: id, jobSeekerId: jobseekerId}}).then((result) => {
             if(result){
-                res.json({code: 200, msg:'状态已更新,已通知通知求职者'})
+                res.json({code: 200, msg:'状态已更新,已通知求职者'})
             }else{
                 res.json({code: 201, msg:'更新状态失败'})
             }

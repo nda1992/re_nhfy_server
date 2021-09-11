@@ -1,9 +1,13 @@
 const express = require('express')
 const router = express.Router()
+const { v4: uuidv4 } = require('uuid')
+const path = require('path')
+const fs = require('fs')
+const multer = require('multer')
 const moment = require('moment-timezone')
 const { positionInstance, jobSeekerInstance,post2positionInstance } = require('../../database/models/associate')
 const sequelize = require('../../database/connection')
-const Message = require('../../models/message')
+const Swiper = require('../../models/swiper')
 const { DataTypes, Op } = require('sequelize')
 // 设置时区
 moment.tz.setDefault('Asia/Shanghai')
@@ -164,6 +168,76 @@ router.post('/getSendMsg2Admin', async (req, res, next) => {
     }else{
         res.json({code:201,msg:'获取消息失败'})
     }
+})
+
+// 管理员上传图片到招聘系统的轮播图中
+// 1.管理员上传轮播图
+const swiperPath = path.join(__dirname,'../../public/swipers/')
+const avatarStorage = multer.diskStorage({
+    destination: (req,file,cb)=>{
+        cb(null,swiperPath)
+    }, 
+    filename: (req,file,cb)=>{
+        const filename = file.originalname
+        cb(null,filename)
+    }
+})
+const swiperUploader = multer({storage:avatarStorage})
+router.post('/uploadSwiper',swiperUploader.array('file'),async (req,res,next)=>{
+    const { userCode } = req.body
+    console.log(req.body)
+    const imgOrigin = 'http://localhost:3000/swipers/'
+    // const fileName = req.files.originalname
+    // const currentFileName = imgOrigin+uuid+path.extname(fileName)
+    const files = req.files
+    let temp = files.map(e=>{
+        const uuid = uuidv4()
+        const basename = path.basename(e.path)    //源文件名
+        const suffix = path.extname(e.path)       //文件后缀
+        const newname = uuid+suffix               //新文件名
+        fs.rename(swiperPath+basename,swiperPath+newname,err=>{
+            // console.log(err)
+        })
+        return {file:imgOrigin+newname}
+        // return {file:imgOrigin+e.originalname}
+    })
+    await Swiper(sequelize,DataTypes).create({url:temp[0].file,userCode:userCode,status:0}).then(result => {
+        if(result){
+            res.json({code:200,msg:'图片上传成功',file:result})
+        }else{
+        res.json({code:201,msg:'图片上传失败'})
+        }
+    })
+})
+
+
+//2. 查询某个管理员已经上传的所有轮播图链接
+router.get('/getAllSwiperImgs', async (req, res, next) => {
+    const { userCode, limit, page} = req.query
+    await Swiper(sequelize,DataTypes).findAll({where:{userCode:userCode}}).then( result => {
+        if(result) {
+            const pageList = result.filter((item,index)=>index < limit * page && index >= limit * (page - 1))
+            const resultPageList = pageList.map(e => {
+                const createTemp = moment(e.createdAt).format('YYYY-MM-DD HH:mm:ss')
+                return { url: e.url, createdDate:createTemp, userCode:userCode,id: e.id, status:e.status }
+            })
+            res.json({code:200,files:resultPageList,total:result.length})
+        }else{
+            res.json({code:201,msg:'获取图片链接失败'})
+        }
+    })
+})
+
+// 3.根据id删除轮播图片
+router.delete('/deleteImgById', async (req,res,next) => {
+    const { id } = req.query
+    await Swiper(sequelize,DataTypes).destroy({where:{id:id}}).then( result => {
+        if(result){
+            res.json({code:200,msg:'图片已删除'})
+        }else{
+            res.json({code:201,msg:'图片删除失败'})
+        }
+    })
 })
 
 module.exports = router
