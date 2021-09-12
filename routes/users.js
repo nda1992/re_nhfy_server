@@ -12,6 +12,7 @@ const {DataTypes, Op} = require('sequelize')
 const sequelize = require('../database/connection')
 const saltPasswd = require('../utils/saltPasswd')
 const comparePasswd = require('../utils/saltPasswd')
+const { ADMIN_AVATAR_URL_UPLOAD, ADMIN_AVATAR_URL_DOWNLOAD } = require('../config/network')
 //用户注册
 router.post("/register",async (req,res,next)=>{
   const data = req.body;
@@ -133,7 +134,7 @@ router.post('/logout',(req,res,next)=>{
 })
 
 //处理用户头像上传
-const pathname = path.join(__dirname,'../public/images/avatar')
+const pathname = ADMIN_AVATAR_URL_UPLOAD
 const storage = multer.diskStorage({
   destination:(req,file,cb)=>{
     cb(null,pathname)
@@ -147,22 +148,21 @@ const storage = multer.diskStorage({
 })
 const uploader = multer({storage:storage})
 router.post('/uploadAvatar',uploader.single('file'),async (req,res,next)=>{
-  const avatarPath = 'http://localhost:3000/images/avatar/'
+  const avatarPath = ADMIN_AVATAR_URL_DOWNLOAD
   const {userCode,avatar}= req.body
   const filename = req.file.originalname
   const uuid = req.headers.uuid
   const currentfileName =avatarPath+uuid+path.extname(filename)
-  const [avatarImg,created] = await Avatar(sequelize,DataTypes).findOrCreate({where:{userCode:userCode},default:{url:currentfileName,userCode:userCode}})
+  const [created] = await Avatar(sequelize,DataTypes).findOrCreate({where:{userCode:userCode},default:{url:currentfileName,userCode:userCode}})
   if(!created){
     Avatar(sequelize,DataTypes).update({url:currentfileName,userCode:userCode},{where:{userCode:userCode}})
   }
   const originfileName = avatar.split("\/").slice(-1)
   if(originfileName[0]!=="defaultImg.png"){  //默认头像不要删除
-    const FILE_PATH=path.join(__dirname,`../public/images/avatar/${originfileName}`)
+    const FILE_PATH = ADMIN_AVATAR_URL_UPLOAD+`${originfileName}`
     fs.unlink(FILE_PATH,()=>{console.log('删除图片成功')})
   }
   res.json({code:200,msg:"头像上传成功",avatar:currentfileName})
-  // res.json({code:200,msg:"uploadAvatar"})
 })
 
 module.exports = router;

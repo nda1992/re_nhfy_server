@@ -1,8 +1,11 @@
 /*
-岗位相关的路由：
+求职者和岗位相关的路由：
 - 用户简历投递
 - 用户收藏岗位
-- 用户分享岗位
+- 用户更新个人信息
+- 获取岗位列表
+- 查看和回复消息
+- 确认参加考试
 */
 const express = require('express')
 const router = express.Router()
@@ -18,7 +21,9 @@ const saltPasswd = require('../../utils/saltPasswd')
 const comparePasswd = require('../../utils/saltPasswd')
 const { positionInstance, jobSeekerInstance,post2positionInstance, get2CollectInstance } = require('../../database/models/associate')
 const Message = require('../../models/message')
-const { DataTypes, Op } = require('sequelize')
+const Swiper = require('../../models/swiper')
+const { DataTypes } = require('sequelize')
+const { JOBSEEKER_DEFAULT_AVATAR_URL_DOWNLOAD, JOBSEEKER_AVATAR_URL_UPLOAD, JOBSEEKER_AVATAR_URL_DOWNLOAD, JOBSEEKER_RESUME_URL_UPLOAD ,JOBSEEKER_RESUME_URL_DOWNLOAD } = require('../../config/network')
 // 设置时区
 moment.tz.setDefault('Asia/Shanghai')
 
@@ -26,7 +31,7 @@ moment.tz.setDefault('Asia/Shanghai')
 // 求职者注册
 router.post('/positionRegister',async (req,res,next) => {
     const { username, password, phone, email } = req.body
-    const defaultAvatar = 'http://localhost:3000/jobseekersAvatar/default.jpg'
+    const defaultAvatar = JOBSEEKER_DEFAULT_AVATAR_URL_DOWNLOAD
     const role = 'jobseeker'
     const hash = await saltPasswd.saltPasswd(password)
     await jobSeekerInstance.findOne({where:{username:username,phone:phone}}).then(async user => {
@@ -63,7 +68,7 @@ router.post('/positionLogin',async (req,res,next) => {
                         loginNum++;
                         result.loginNum=loginNum;
                         await jobSeekerInstance.update({loginNum:loginNum},{where:{phone:account}}).then(result1 => {
-                            res.json({code:200,msg:"登录成功",data:{id:result.id,username:result.username,role:result.role}})
+                            res.json({code:200,msg:"登录成功",data:{id:result.id,username:result.username,role:result.role,phone:result.phone,email:result.email,avatar:result.faceimgUrl,file:result.attachmentUrl}})
                         })
                     }else{
                         res.json({code:203,msg:'密码错误,登录失败'})
@@ -81,7 +86,7 @@ router.post('/positionLogin',async (req,res,next) => {
                         let { loginNum } = result
                         loginNum++;
                         await jobSeekerInstance.update({loginNum:loginNum},{where:{email:account}}).then(result1 => {
-                            res.json({code:200,msg:"登录成功",data:{id:result.id,username:result.username,role:result.role, phone:result.phone,email:result.email,avatar:result.faceimgUrl}})
+                            res.json({code:200,msg:"登录成功",data:{id:result.id,username:result.username,role:result.role, phone:result.phone,email:result.email,avatar:result.faceimgUrl, file:result.attachmentUrl}})
                         })
                     }else{
                         res.json({code:203,msg:'密码错误,登录失败'})
@@ -110,7 +115,7 @@ router.get('/UserinfoDetail', async (req,res,next) => {
 router.post('/updateUserinfo',async (req,res,next) => {
     const data = req.body
     const { basic } = req.body
-    const returnData = { username:data.username,avatar:data.avatar,email: data.email,phone: data.phone }
+    const returnData = { username:data.username,avatar:data.faceimgUrl,email: data.email,phone: data.phone }
     // 更新详细信息
     if(basic){
         await jobSeekerInstance.update({sex:data.sex,age:data.age,birthday:data.birthday,nation:data.nation,address:data.address,degree:data.degree,school:data.school,professional: data.professional,undergraduateTime:data.undergraduateTime,faceimgUrl: data.faceimgUrl,attachmentUrl:data.attachmentUrl},{where:{id:data.id}}).then((result) => {
@@ -153,7 +158,7 @@ router.post('/updatePasswd', async (req, res, next) => {
 })
 
 // 头像上传
-const avatarPath = path.join(__dirname,'../../public/jobseekersAvatar/')
+const avatarPath = JOBSEEKER_AVATAR_URL_UPLOAD
 const avatarStorage = multer.diskStorage({
     destination: (req,file,cb)=>{
         cb(null,avatarPath)
@@ -165,11 +170,11 @@ const avatarStorage = multer.diskStorage({
 })
 const avatarUploader = multer({storage:avatarStorage})
 router.post('/uploadAvatar',avatarUploader.array('file'),async (req,res,next)=>{
-    const { id } = req.body
-    const imgOrigin = 'http://localhost:3000/jobseekersAvatar/'
-    const originpath = path.join(__dirname,'../../public/jobseekersAvatar/')
-    // const fileName = req.files.originalname
-    // const currentFileName = imgOrigin+uuid+path.extname(fileName)
+    const { id, avatar } = req.body
+    // 需要删除上一张头像的文件名
+    const filename = avatar.split('/').slice(-1)[0]
+    const imgOrigin = JOBSEEKER_AVATAR_URL_DOWNLOAD
+    const originpath = JOBSEEKER_AVATAR_URL_UPLOAD
     const files = req.files
     let temp = files.map(e=>{
         const uuid = uuidv4()
@@ -180,10 +185,11 @@ router.post('/uploadAvatar',avatarUploader.array('file'),async (req,res,next)=>{
             // console.log(err)
         })
         return {file:imgOrigin+newname}
-        // return {file:imgOrigin+e.originalname}
     })
     await jobSeekerInstance.update({faceimgUrl:temp[0].file},{where:{id:id}}).then(result => {
         if(result){
+            const fullPath = avatarPath+filename
+            fs.unlink(fullPath,function(err){ if(err){throw err}})
             res.json({code:200,msg:'头像上传成功',files:temp})
         }else{
         res.json({code:201,msg:'头像上传失败'})
@@ -192,7 +198,7 @@ router.post('/uploadAvatar',avatarUploader.array('file'),async (req,res,next)=>{
 })
 
 // 文件上传
-const filePath = path.join(__dirname,'../../public/jobseekersFiles/')
+const filePath = JOBSEEKER_RESUME_URL_UPLOAD
 const fileStorage = multer.diskStorage({
     destination: (req,file,cb)=>{
         cb(null,filePath)
@@ -204,8 +210,8 @@ const fileStorage = multer.diskStorage({
 })
 const fileUploader = multer({storage:fileStorage})
 router.post('/uploadFile',fileUploader.array('file'),async (req,res,next) => {
-    const { id } = req.body
-    const fileOrigin = 'http://localhost:3000/jobseekersFiles/'
+    const { id, file } = req.body
+    const fileOrigin = JOBSEEKER_RESUME_URL_DOWNLOAD
     const files = req.files
     let temp = files.map(e=>{
         const uuid = uuidv4()
@@ -219,6 +225,12 @@ router.post('/uploadFile',fileUploader.array('file'),async (req,res,next) => {
     })
     await jobSeekerInstance.update({attachmentUrl:temp[0].file},{where:{id:id}}).then(result=>{
         if(result){
+            // 只有用户上传过简历后，才可以进行前一个文件的删除
+            if(file!==undefined){
+                const filename =file.split('/').slice(-1)[0]
+                const fullPath = filePath+filename
+                fs.unlink(fullPath,function(err){ if(err){throw err}})
+            }
             res.json({code:200,msg:'简历上传成功',files:temp})
         }else{
             res.json({code:201,msg:'简历上传失败',files:temp})
@@ -229,7 +241,7 @@ router.post('/uploadFile',fileUploader.array('file'),async (req,res,next) => {
 // 查看docx文档
 router.post('/getResumeFile', async (req, res, next) => {
     const { url } = req.body
-    const docxfilePath = path.join(__dirname,'../../public/jobseekersFiles/')
+    const docxfilePath = JOBSEEKER_RESUME_URL_DOWNLOAD
     const arr = url.split('/').slice(-1)
     const files = fs.readdirSync(docxfilePath)
     let file = ''
@@ -335,7 +347,6 @@ router.get('/getPositionList',async (req,res,next) => {
     })
     if (jobseekerId === undefined || jobseekerId === '' || jobseekerId === null) {
         const pageList = positions.filter((item,index)=>index < limit * page && index >= limit * (page - 1))
-        console.log(pageList)
         res.json({code:200,msg:'获取岗位列表成功',positions:pageList,total:positions.length})
     } else {
         let resultTemp = []
@@ -477,7 +488,6 @@ router.get('/confirmStauts',async (req, res, next) => {
     })
 })
 
-
 // 管理员审核求职者的简历状态
 router.post('/setPositionStatus',async (req,res,next) => {
     const { id, jobseekerId, Switch } = req.body
@@ -502,7 +512,6 @@ router.post('/setPositionStatus',async (req,res,next) => {
         })
     }
 })
-
 
 // 管理员删除求职者已经投递的岗位
 router.delete('/deletePost2Position', async (req,res,next) => {
@@ -582,7 +591,6 @@ router.post('/getSendMsg', async (req, res, next) => {
     }
 })
 
-
 // 根据jobseekerid更新消息为已读
 router.post('/updateIsread', async (req, res, next) => {
     const { receive_id } = req.body
@@ -642,6 +650,17 @@ router.post('/removeAllSendMsg', async (req, res, next) => {
             res.json({code:200,msg:'已删除所有已发送的消息'})
         }else{
             res.json({code:201,msg:'删除消息失败'})
+        }
+    })
+})
+
+// (不用token认证，求职者可以访问所有的轮播图)获取轮播图到招聘系统中
+router.get('/getSwiperImgs2Run', async (req, res, next) => {
+    await Swiper(sequelize,DataTypes).findAll({where:{status:1}}).then((swiper) => {
+        if(swiper){
+            res.json({code:200,swipers:swiper})
+        }else{
+            res.json({code:201,msg:'获取图片失败'})
         }
     })
 })
