@@ -10,7 +10,7 @@
 const express = require('express')
 const router = express.Router()
 const mammoth = require('mammoth')
-const docxConverter = require('docx-pdf')
+// const docxConverter = require('docx-pdf')
 const sequelize = require('../../database/connection')
 const path = require('path')
 const fs = require('fs')

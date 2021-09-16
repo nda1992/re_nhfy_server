@@ -8,7 +8,7 @@ const BASE_URL = 'http://localhost:3000/'
 const ADMIN_AVATAR_URL_UPLOAD = path.join(__dirname,'../public/images/avatar/')
 
 // 新闻图片上传
-const NEWS_IMAGE_URL_UPLOAD = path.join(__dirname,'../public/images/news/')
+const NEWS_IMAGES_URL_UPLOAD = path.join(__dirname,'../public/images/news/')
 
 // 新闻附件上传
 const NEWS_ATTACHMENTFILE_URL_UPLOAD = path.join(__dirname,'../public/files/')
@@ -24,11 +24,15 @@ const SWIPER_IMAGES_URL_UPLOAD = path.join(__dirname,'../public/swipers/')
 
 
 // 客户端下载
+
+// 管理员默认头像地址
+const ADMIN_DEFAULT_AVATAR_URL_DOWNLOAD = 'http://localhost:3000/images/avatar/defaultImg.png'
+
 // 管理员头像下载
 const ADMIN_AVATAR_URL_DOWNLOAD = 'http://localhost:3000/images/avatar/'
 
 // 新闻图片下载
-const NEWS_IMAGE_URL_DOWNLOAD = 'http://localhost:3000/images/news/'
+const NEWS_IMAGES_URL_DOWNLOAD = 'http://localhost:3000/images/news/'
 
 // 新闻附件下载
 const NEWS_ATTACHMENTFILE_URL_DOWNLOAD = 'http://localhost:3000/files/'
@@ -46,19 +50,21 @@ const JOBSEEKER_DEFAULT_AVATAR_URL_DOWNLOAD = 'http://localhost:3000/jobseekersA
 const SWIPER_IMAGES_URL_DOWNLOAD = 'http://localhost:3000/swipers/'
 
 
+
 module.exports = {
     BASE_URL,
     ADMIN_AVATAR_URL_UPLOAD,
-    NEWS_IMAGE_URL_UPLOAD,
+    NEWS_IMAGES_URL_UPLOAD,
     NEWS_ATTACHMENTFILE_URL_UPLOAD,
     JOBSEEKER_AVATAR_URL_UPLOAD,
     JOBSEEKER_RESUME_URL_UPLOAD,
     SWIPER_IMAGES_URL_UPLOAD,
     ADMIN_AVATAR_URL_DOWNLOAD,
-    NEWS_IMAGE_URL_DOWNLOAD ,
+    NEWS_IMAGES_URL_DOWNLOAD ,
     NEWS_ATTACHMENTFILE_URL_DOWNLOAD,
     JOBSEEKER_AVATAR_URL_DOWNLOAD,
     JOBSEEKER_RESUME_URL_DOWNLOAD,
     SWIPER_IMAGES_URL_DOWNLOAD,
-    JOBSEEKER_DEFAULT_AVATAR_URL_DOWNLOAD
+    JOBSEEKER_DEFAULT_AVATAR_URL_DOWNLOAD,
+    ADMIN_DEFAULT_AVATAR_URL_DOWNLOAD
 }

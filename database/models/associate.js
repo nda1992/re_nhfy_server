@@ -1,7 +1,7 @@
 const sequelize = require('../connection')
 const { DataTypes,Sequelize } = require('sequelize')
 const Position = require('../../models/position')
-const jobSeeker = require('../../models/jobSeeker')
+const jobSeeker = require('../../models/jobseeker')
 
 // jobSeeker实例对象
 const jobSeekerInstance = jobSeeker(sequelize, DataTypes)

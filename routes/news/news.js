@@ -12,6 +12,7 @@ const User = require('../../models/user')
 const Category = require('../../models/category')
 const Dept = require('../../models/dept')
 const moment = require('moment-timezone')
+const { NEWS_IMAGES_URL_UPLOAD, NEWS_IMAGES_URL_DOWNLOAD, NEWS_ATTACHMENTFILE_URL_UPLOAD, NEWS_ATTACHMENTFILE_URL_DOWNLOAD } = require('../../config/network')
 // 设置时区
 moment.tz.setDefault('Asia/Shanghai')
 //搜索作者
@@ -161,7 +162,6 @@ router.get('/getDraftList',async (req,res,next)=>{
     }
 })
 
-
 // 根据新闻id查询草稿
 router.get('/getDraftById',async (req,res,next)=>{
     const data = req.query
@@ -173,7 +173,6 @@ router.get('/getDraftById',async (req,res,next)=>{
         }
     })
 })
-
 
 // 获取所有文章记录
 router.get('/getnewsList',async (req,res,next)=>{
@@ -295,7 +294,7 @@ router.delete('/deleteNewsById',async (req,res,next)=>{
 
 
 // 文章图片上传
-const filePath = path.join(__dirname,'../../public/images/news')
+const filePath = NEWS_IMAGES_URL_UPLOAD
 const storage = multer.diskStorage({
     destination: (req,file,cb)=>{
         cb(null,filePath)
@@ -305,19 +304,17 @@ const storage = multer.diskStorage({
         cb(null,filename)
     }
 })
+
 const uploader = multer({storage:storage})
 router.post('/upload',uploader.array('file'),(req,res,next)=>{
-    const imgOrigin = 'http://localhost:3000/images/news/'
-    const originpath = path.join(__dirname,'../../public/images/news/')
-    // const fileName = req.files.originalname
-    // const currentFileName = imgOrigin+uuid+path.extname(fileName)
+    const imgOrigin =  NEWS_IMAGES_URL_DOWNLOAD
     const files = req.files
     let temp = files.map(e=>{
         const uuid = uuidv4()
         let basename = path.basename(e.path)    //源文件名
         let suffix = path.extname(e.path)       //文件后缀
         let newname = uuid+suffix               //新文件名
-        fs.rename(originpath+basename,originpath+newname,err=>{
+        fs.rename(filePath+basename,filePath+newname,err=>{
             // console.log(err)
         })
         return {file:imgOrigin+newname}
@@ -329,7 +326,7 @@ router.post('/upload',uploader.array('file'),(req,res,next)=>{
 
 
 /****************处理xls、xlsx、doc和docx文件的上传************************/ 
-const ExcelfilePath = path.join(__dirname,'../../public/files')
+const ExcelfilePath = NEWS_ATTACHMENTFILE_URL_UPLOAD
 const Filestorage = multer.diskStorage({
     destination: (req,file,cb)=>{
         cb(null,ExcelfilePath)
@@ -342,17 +339,15 @@ const Filestorage = multer.diskStorage({
 const Fileuploader = multer({storage:Filestorage})
 
 router.post('/uploadFile',Fileuploader.array('file'), async (req,res,next)=>{
-    // 文件的保存路径
-    const fileOriginPath = path.join(__dirname,'../../public/files/')
     // 访问文件的URL
-    const fileUrl = 'http://localhost:3000/files/'
+    const fileUrl = NEWS_ATTACHMENTFILE_URL_DOWNLOAD
     const files = req.files
     const FileArr = files.map(e => {
         const uuid = uuidv4()
         let basename = path.basename(e.path)
         let suffix = path.extname(e.path) 
         let newname = uuid+suffix
-        fs.rename(fileOriginPath+basename,fileOriginPath+newname,err=>{
+        fs.rename(ExcelfilePath+basename,ExcelfilePath+newname,err=>{
             // console.log(err)
         })
         return {file:fileUrl+newname}

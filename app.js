@@ -34,7 +34,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.all('*',(req,res,next)=>{
   res.header('Access-Control-Allow-Origin', '*');
   //Access-Control-Allow-Headers ,可根据浏览器的F12查看,把对应的粘贴在这里就行
-  res.header('Access-Control-Allow-Headers', 'Content-Type,uuid,token');  //添加uuid,token，设置自定义的请求头
+  res.header('Access-Control-Allow-Headers', 'Content-Type,token');  //添加uuid,token，设置自定义的请求头
   res.header('Access-Control-Allow-Methods', '*');
   res.header('Access-Control-Allow-Credentials','true');
   res.header('Content-Type', 'application/json;charset=utf-8');
@@ -44,7 +44,7 @@ app.all('*',(req,res,next)=>{
 app.use((req,res,next)=>{
   let url = req.url
   // 求职相关的所有请求只匹配position开头
-  const positionArr = ['/recruit/getPositionList', '/position/']
+  const positionArr = ['/recruit/getPositionList', '/position/', '/users/searchDept', '/users/register']
   let trueUrl = -1
   for(let p of positionArr){
     if (url.search(p)!==-1) {
@@ -52,7 +52,8 @@ app.use((req,res,next)=>{
       break
     }
   }
-  let whileUrl=['/users/login','/users/register','/news/upload','/users/searchDept','/position/jobSeekerRegister']
+  let whileUrl=['/users/login','/position/jobSeekerRegister']
+  console.log(url)
   if(whileUrl.indexOf(url) >= 0 || trueUrl !== -1){
     return next()
   }
