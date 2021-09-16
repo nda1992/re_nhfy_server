@@ -9,7 +9,7 @@ const { positionInstance, jobSeekerInstance,post2positionInstance } = require('.
 const sequelize = require('../../database/connection')
 const Swiper = require('../../models/swiper')
 const { DataTypes } = require('sequelize')
-const { SWIPER_IMAGE_URL_UPLOAD, SWIPER_IMAGE_URL_DOWNLOAD } = require('../../config/network')
+const { SWIPER_IMAGES_URL_UPLOAD, SWIPER_IMAGES_URL_DOWNLOAD } = require('../../config/network')
 // 设置时区
 moment.tz.setDefault('Asia/Shanghai')
 
@@ -174,7 +174,7 @@ router.post('/getSendMsg2Admin', async (req, res, next) => {
 // 管理员上传图片到招聘系统的轮播图中
 // 1.管理员上传轮播图
 // const swiperPath = path.join(__dirname,'../../public/swipers/')
-const swiperPath = SWIPER_IMAGE_URL_UPLOAD
+const swiperPath = SWIPER_IMAGES_URL_UPLOAD
 const avatarStorage = multer.diskStorage({
     destination: (req,file,cb)=>{
         cb(null,swiperPath)
@@ -187,8 +187,9 @@ const avatarStorage = multer.diskStorage({
 const swiperUploader = multer({storage:avatarStorage})
 router.post('/uploadSwiper',swiperUploader.array('file'),async (req,res,next)=>{
     const { userCode } = req.body
-    const imgOrigin = SWIPER_IMAGE_URL_DOWNLOAD
+    const imgOrigin = SWIPER_IMAGES_URL_DOWNLOAD
     const files = req.files
+    console.log(files)
     let temp = files.map(e=>{
         const uuid = uuidv4()
         const basename = path.basename(e.path)    //源文件名
