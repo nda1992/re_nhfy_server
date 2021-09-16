@@ -12,7 +12,8 @@ const {DataTypes, Op} = require('sequelize')
 const sequelize = require('../database/connection')
 const saltPasswd = require('../utils/saltPasswd')
 const comparePasswd = require('../utils/saltPasswd')
-const { ADMIN_AVATAR_URL_UPLOAD, ADMIN_AVATAR_URL_DOWNLOAD } = require('../config/network')
+const { v4: uuidv4 } = require('uuid')
+const { ADMIN_AVATAR_URL_UPLOAD, ADMIN_AVATAR_URL_DOWNLOAD, ADMIN_DEFAULT_AVATAR_URL_DOWNLOAD } = require('../config/network')
 //用户注册
 router.post("/register",async (req,res,next)=>{
   const data = req.body;
@@ -29,9 +30,12 @@ router.post("/register",async (req,res,next)=>{
     }else if(regCode===data.regcode){
       await User(sequelize,DataTypes).create(
           {userCode:data.userCode,username:data.username,password:hash,email:data.email,role:role,deptCode:data.deptName,desc:data.desc,loginNum:loginNum}
-      ).then(result=>{
+      ).then(async result=>{
         if(result){
-          res.json({code:200,msg:"用户注册成功"})
+          // 创建一张默认头像给该用户
+          await Avatar(sequelize, DataTypes).create({userCode:data.userCode,url:ADMIN_DEFAULT_AVATAR_URL_DOWNLOAD}).then(result2 => {
+            res.json({code:200,msg:"用户注册成功"})
+          })
         }else{
           res.json({code:201,msg:"用户注册失败"})
         }
@@ -79,7 +83,7 @@ router.post("/login",async (req,res,next)=>{
           let {loginNum} = result;
           loginNum++;
           result.loginNum=loginNum;
-          await User(sequelize,DataTypes).update({loginNum: loginNum},{where:{userCode:username}}).then(result1=>{
+          await User(sequelize,DataTypes).update({loginNum: loginNum},{where:{userCode:username}}).then(async result1=>{
             res.json({code:200,msg:"登录成功",data:{token:token,userCode:result.userCode,username:result.username,role:result.role}})
           })
         }else{
@@ -119,10 +123,9 @@ router.get("/info",async (req,res,next)=>{
         if(avatar){
           res.json({code:200,msg:'获取用户信息成功',data:{usercode:result.userCode,avatar:avatar.url,deptname:"科技部",name:result.username}})
         }else{
-          res.json({code:200,msg:'获取用户信息成功',data:{usercode:result.userCode,avatar:"http://localhost:3000/images/avatar/defaultImg.png",deptname:"科技部",name:result.username}})
+          res.json({code:202,msg:'查询头像失败'})
         }
       })
-      
     }else{
       res.json({code:201,msg:'获取用户信息失败'})
     }
@@ -140,29 +143,36 @@ const storage = multer.diskStorage({
     cb(null,pathname)
   },
   filename:(req,file,cb)=>{
-    const ext = path.extname(file.originalname)
-    const uuid = req.headers.uuid
-    const fullPath = uuid+ext
+    const fullPath = file.originalname
     cb(null,fullPath)
   }
 })
 const uploader = multer({storage:storage})
-router.post('/uploadAvatar',uploader.single('file'),async (req,res,next)=>{
+router.post('/uploadAvatar',uploader.array('file'),async (req,res,next)=>{
   const avatarPath = ADMIN_AVATAR_URL_DOWNLOAD
   const {userCode,avatar}= req.body
-  const filename = req.file.originalname
-  const uuid = req.headers.uuid
-  const currentfileName =avatarPath+uuid+path.extname(filename)
-  const [created] = await Avatar(sequelize,DataTypes).findOrCreate({where:{userCode:userCode},default:{url:currentfileName,userCode:userCode}})
-  if(!created){
-    Avatar(sequelize,DataTypes).update({url:currentfileName,userCode:userCode},{where:{userCode:userCode}})
-  }
-  const originfileName = avatar.split("\/").slice(-1)
-  if(originfileName[0]!=="defaultImg.png"){  //默认头像不要删除
-    const FILE_PATH = ADMIN_AVATAR_URL_UPLOAD+`${originfileName}`
-    fs.unlink(FILE_PATH,()=>{console.log('删除图片成功')})
-  }
-  res.json({code:200,msg:"头像上传成功",avatar:currentfileName})
+  const files = req.files
+  const temp = files.map(e => {
+    const uuid = uuidv4()
+    const basename = path.basename(e.path)    //源文件名
+    const suffix = path.extname(e.path)       //文件后缀
+    const newname = uuid+suffix               //新文件名
+    fs.rename(pathname+basename,pathname+newname,err=>{
+      // console.log(err)
+  })
+    return {file:avatarPath+newname}
+  })
+  await Avatar(sequelize,DataTypes).update({url:temp[0].file},{where:{userCode:userCode}}).then (result => {
+    if(result) {
+      const originfileName = avatar.split("\/").slice(-1)
+      if(originfileName[0]!=="defaultImg.png"){  //默认头像不要删除
+        const FILE_PATH = ADMIN_AVATAR_URL_UPLOAD+`${originfileName}`
+        fs.unlink(FILE_PATH,()=>{console.log('删除图片成功')})
+      }
+      res.json({code:200,msg:"头像上传成功",avatar:temp[0].file})
+    }
+  })
 })
+
 
 module.exports = router;
