@@ -67,7 +67,7 @@ router.post('/searchDept',async (req,res,next)=>{
 
 //用户登录
 router.post("/login",async (req,res,next)=>{
-  const {username,password} = req.body;
+  const { username, password } = req.body
   if(!username||!password){
     res.json({code:201,msg:"用户名或密码不能为空,登录失败"})
   }else{
@@ -80,9 +80,9 @@ router.post("/login",async (req,res,next)=>{
         if(hash){
           const token = createToken()
           const token_ = Token(sequelize,DataTypes).create({userCode:result.userCode,user_token:token})
-          let {loginNum} = result;
-          loginNum++;
-          result.loginNum=loginNum;
+          let { loginNum } = result
+          loginNum++
+          result.loginNum=loginNum
           await User(sequelize,DataTypes).update({loginNum: loginNum},{where:{userCode:username}}).then(async result1=>{
             res.json({code:200,msg:"登录成功",data:{token:token,userCode:result.userCode,username:result.username,role:result.role}})
           })
@@ -94,14 +94,15 @@ router.post("/login",async (req,res,next)=>{
   }
 });
 
-//web端用户密码更新
-router.post("/updatePasswd",async (req,res,next)=>{
-  const {userCode,password} = req.body;
-  await User(sequelize,DataTypes).findOne({where:{userCode:userCode}}).then(async result=>{
+//管理后台用户密码更新
+router.post("/updatePassword",async (req,res,next)=>{
+  const { username, email, userCode, password } = req.body
+  const hash = await saltPasswd.saltPasswd(password)
+  await User(sequelize,DataTypes).findOne({ where: { userCode: userCode, username: username, email: email } }).then(async result=>{
     if(!result){
       res.json({code:201,msg:'该用户不存在，请先注册'})
     }else{
-      await User(sequelize,DataTypes).update({password:password},{where:{userCode:userCode}}).then(result1=>{
+      await User(sequelize,DataTypes).update({ password: hash },{ where:{ userCode: userCode, username: username, email: email } }).then(result1=>{
         if(result1){
           res.json({code:200,msg:'密码更新成功'})
         }else{
@@ -116,8 +117,8 @@ router.post("/updatePasswd",async (req,res,next)=>{
 
 //登录成功后，携带token拉取用户的信息
 router.get("/info",async (req,res,next)=>{
-  const {userCode} = req.query
-  await User(sequelize,DataTypes).findOne({where:{userCode:userCode}}).then(async result=>{
+  const { userCode } = req.query
+  await User(sequelize,DataTypes).findOne({ where: { userCode: userCode }}).then(async result=>{
     if(result){
       await Avatar(sequelize,DataTypes).findOne({where:{userCode:result.userCode}}).then(avatar=>{
         if(avatar){
