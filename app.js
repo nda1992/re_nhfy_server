@@ -44,7 +44,7 @@ app.all('*',(req,res,next)=>{
 app.use((req,res,next)=>{
   let url = req.url
   // 求职相关的所有请求只匹配position开头
-  const positionArr = ['/recruit/getPositionList', '/position/', '/users/searchDept', '/users/register']
+  const positionArr = [ '/recruit/getPositionList', '/position/', '/users/searchDept', '/users/register' ]
   let trueUrl = -1
   for(let p of positionArr){
     if (url.search(p)!==-1) {
@@ -52,7 +52,7 @@ app.use((req,res,next)=>{
       break
     }
   }
-  let whileUrl=['/users/login','/position/jobSeekerRegister']
+  let whileUrl=[ '/users/login', '/position/jobSeekerRegister', '/users/updatePassword' ]
   console.log(url)
   if(whileUrl.indexOf(url) >= 0 || trueUrl !== -1){
     return next()

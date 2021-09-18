@@ -276,17 +276,22 @@ router.post('/getResumeFile', async (req, res, next) => {
 // 用户收藏岗位
 router.post('/handleCollect', async (req,res,next) => {
     const { positionId, jobSeekerId, isCollected } = req.body
+    let isPosted = 0    // 默认未投递
+    // 要收藏的岗位是否已经投递了？
+    await post2positionInstance.findOne({where: { PositionId:positionId, jobSeekerId:jobSeekerId } }).then(result => {
+        if (result) isPosted = 1
+    })
     // 如果isCollected=true，说明已经收藏，再次点击时，则取消收藏
     if (isCollected) {
-        await get2CollectInstance.destroy({where:{PositionId:positionId, jobSeekerId:jobSeekerId}}).then((result) =>{
-            if(result) {
+        await get2CollectInstance.destroy({ where: { PositionId:positionId, jobSeekerId:jobSeekerId }}).then(result1 =>{
+            if(result1) {
                 res.json({code:200,msg:'已取消收藏'})
             }else{
                 res.json({code:200,msg:'取消收藏失败'})
             }
         })
     }else{
-        await get2CollectInstance.create({ PositionId:positionId, jobSeekerId:jobSeekerId}).then(result => {
+        await get2CollectInstance.create({ PositionId:positionId, jobSeekerId:jobSeekerId, status: isPosted }).then(result => {
             if (result){
                 res.json({code:200,msg:'收藏岗位成功'})
             }else{
@@ -299,9 +304,16 @@ router.post('/handleCollect', async (req,res,next) => {
 // 用户投递简历
 router.post('/postPosition',async (req,res,next) => {
     const { positionId, jobSeekerId } = req.body
+    // 判断收藏列表中是否已经存在了投递的岗位
+    const isPosted = await get2CollectInstance.findOne({where:{PositionId:positionId, jobSeekerId:jobSeekerId}})
+    console.log(isPosted)
     // status=1：已投递，未阅读;isPosted=true:表示已投递;confirm:是否确定参加笔试和面试，1=参加、0=不参加
-    post2positionInstance.create({jobSeekerId:jobSeekerId, PositionId:positionId,status:1,isPosted:1,confirm:0}).then(result => {
+    post2positionInstance.create({jobSeekerId:jobSeekerId, PositionId:positionId,status:1,isPosted:1,confirm:0}).then(async result => {
         if(result){
+            // 只有isPosted存在时，才会将status=1，表示该收藏的岗位已经投递了
+            if(isPosted) {
+                await get2CollectInstance.update({status:1},{where:{PositionId:positionId, jobSeekerId:jobSeekerId}}).then(result2 => {})
+            }
             res.json({code:200,msg:'简历投递成功'})
         }else{
             res.json({code:201,msg:'简历投递失败'})
@@ -309,7 +321,51 @@ router.post('/postPosition',async (req,res,next) => {
     })
 })
 
-// 获取岗位列表
+// 不带条件获取所有岗位的列表（用于管理员）
+router.get('/getAllPositionList', async (req, res, next) => {
+    const { limit, page } = req.query
+    await positionInstance.findAll().then(result => {
+        if(result) {
+            let positions = result.map( e => {
+                let createTime = moment(e.createdAt).format('YYYY-MM-DD HH:mm:ss')
+                // 也返回一个YYYY-MM-DD格式的时间
+                let simpleDate = moment(e.createdAt).format('YYYY-MM-DD')
+                // 状态更新：Switch
+                let Switch = ''
+                // 招聘状态
+                let statusTemp = ''
+                e.status===1 ? statusTemp='在招' : statusTemp = '已结束'
+                // 岗位类别
+                let typeTemp = ''
+                e.type===1 ? typeTemp='事业编' :typeTemp='非事业编'
+                // 当前状态
+                let HandlestatusTemp = ''
+                switch (e.Handlestatus) {
+                    case 1: 
+                        HandlestatusTemp = '已删除'
+                        Switch = false
+                        break
+                    case 2: 
+                        HandlestatusTemp = '审核已通过'
+                        Switch = true
+                        break
+                    case 3: 
+                        HandlestatusTemp = '未审核'
+                        Switch = false
+                        break
+                }
+                // isPosted=false:未投递，isPosted=true：已投递
+                return { id:e.id,positionName:e.positionName,deptName:e.deptName,address:e.address,requireNum:e.requireNum,type:typeTemp,Switch:Switch,status:statusTemp,Handlestatus:HandlestatusTemp,userCode:e.userCode,age:e.age,english:e.english,professional:e.professional,desc:e.desc,degree:e.degree,contactPhone:e.contactPhone,createDate:createTime,simpleDate:simpleDate,isPosted:false,isCollected:false}
+            })
+            const pageList = positions.filter((item,index)=>index < limit * page && index >= limit * (page - 1))
+            res.json({code:200,msg:'获取岗位列表成功',positions:pageList,total:positions.length})
+        } else {
+            res.json({code:201,msg:'获取岗位列表失败'})
+        }
+    })
+})
+
+// 获取岗位列表（用于招聘系统和用户登录后查看到的岗位列表）
 router.get('/getPositionList',async (req,res,next) => {
     const { limit, page, jobseekerId } = req.query
     // jobseekerId为空时，表示用户还没有登录，直接返回所有的岗位列表
@@ -425,10 +481,10 @@ router.get('/getPost2PositionListByUid', async (req, res, next) => {
         const pageList = AllpostedPositionsList.filter((item,index)=>index < limit * page && index >= limit * (page - 1))
         res.json({code:200,msg:'数据获取成功',items:pageList,total:AllpostedPositionsList.length})
     }else{
-        /*因为涉及了三表关联，所以使用了sequelize提供的原生SQL查询，当然，这里不使用sequelize提供的表关联也是可以的（而且更方便），因为从前端传递过来的uid和pid都是实实在在存在的数据，所以在对get2collectd
+        /*因为涉及了三表关联，所以使用了sequelize提供的原生SQL查询，当然，这里不使用sequelize提供的表关联也是可以的（而且更方便），因为从前端传递过来的uid和pid肯定存在的数据，所以在对get2collectd
         和post2positions这两个表进行create即可，不用担心数据不存在的问题。所以可以不用配置关联，这样反而更方便一些，我这里懒得修改了*/ 
         // 收藏的岗位列表
-        const Collectedsql = `select c.status as positionStatus,c.id,c.positionName,c.address,c.requireNum,c.type,c.age,c.degree,c.professional,c.desc,b.createdAt,c.deptName,c.english from jobseekers a left join get2collects b on a.id = b.jobSeekerId left join positions c on b.PositionId = c.id  where a.id = ${queryid} and c.Handlestatus<>1`
+        const Collectedsql = `select c.status as positionStatus,c.id,c.positionName,c.address,c.requireNum,c.type,c.age,c.degree,c.professional,c.desc,b.createdAt,b.status,c.deptName,c.english from jobseekers a left join get2collects b on a.id = b.jobSeekerId left join positions c on b.PositionId = c.id  where a.id = ${queryid} and c.Handlestatus<>1`
         // 投递的岗位列表
         const Postedsql = `select b.approveDate,c.status as positionStatus,c.id,c.positionName,c.address,c.requireNum,c.type,c.age,c.degree,c.professional,c.desc,b.status,b.confirm,b.createdAt,c.deptName,c.english from jobseekers a left join post2positions b on a.id = b.jobSeekerId left join positions c on b.PositionId = c.id  where a.id = ${queryid} and c.Handlestatus<>1`
         const postedPositions = await sequelize.query(Postedsql)
@@ -456,7 +512,7 @@ router.get('/getPost2PositionListByUid', async (req, res, next) => {
             const createdTime = moment(e.createdAt).format('YYYY-MM-DD HH:mm:ss')
             const typeTemp = e.type === 1?'事业编':'非事业编'
             currentStatusTemp = e.positionStatus === 1 ? '在招' : '已结束'
-            return {id:e.id,positionName:e.positionName,address:e.address,requireNum:e.requireNum,type:typeTemp,age:e.age,degree:e.degree,professional:e.professional,desc:e.desc,createdTime:createdTime,deptName:e.deptName,english:e.english,currentStatus:currentStatusTemp,isCollected:true}
+            return {id:e.id,positionName:e.positionName,address:e.address,requireNum:e.requireNum,type:typeTemp,age:e.age,degree:e.degree,professional:e.professional,desc:e.desc,createdTime:createdTime,deptName:e.deptName,english:e.english,currentStatus:currentStatusTemp,isCollected:true,isPosted:e.status}
         })
         const PostedpageList = postedPositionsList.filter((item,index)=>index < limit * page && index >= limit * (page - 1))
         const CollectedpageList = collectedPositionsList.filter((item,index)=>index < limit * page && index >= limit * (page - 1))
@@ -467,9 +523,14 @@ router.get('/getPost2PositionListByUid', async (req, res, next) => {
 // 用户取消某个已经投递的岗位
 router.get('/cancelPostedByPid', async (req, res, next) => {
     const { pid, uid } = req.query
-    await post2positionInstance.destroy({where:{PositionId: pid,jobSeekerId:uid}}).then((result) => {
+    // 判断收藏列表中是否已经存在了投递的岗位
+    const isPosted = await get2CollectInstance.findOne({where:{PositionId:pid, jobSeekerId:uid}})
+    await post2positionInstance.destroy({where:{PositionId: pid,jobSeekerId:uid}}).then(async (result) => {
         if(result){
-            res.json({code:200,msg:'已取消投递的岗位'})
+            // 取消投递时，收藏列表中的status也需要设置为0
+            if(isPosted) {  await get2CollectInstance.update({ status: 0 }, {where: { PositionId: pid, jobSeekerId: uid }}).then(result2 => {}) }
+                res.json({code:200,msg:'已取消投递的岗位'})
+            
         }else{
             res.json({code:201,msg:'取消失败'})
         }
@@ -513,7 +574,7 @@ router.post('/setPositionStatus',async (req,res,next) => {
     }
 })
 
-// 管理员删除求职者已经投递的岗位
+// 管理员删除求职者已经投递的岗位（谨慎使用，删除该条记录后，求职者的投递列表中也会相应删除该条记录）
 router.delete('/deletePost2Position', async (req,res,next) => {
     const { pid, uid } = req.query
     await post2positionInstance.destroy({where: {pid: pid, uid:uid}}).then((result) => {
