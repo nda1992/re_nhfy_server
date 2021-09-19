@@ -725,4 +725,70 @@ router.get('/getSwiperImgs2Run', async (req, res, next) => {
         }
     })
 })
+
+// 多条件过滤岗位列表
+/*因为sequelize没有提供动态where条件查询，所有只能使用下面这种拼接sql的方法来实现了啊🤣*/
+router.post('/filterPositions', async (req,res ,next) => {
+    const { type, english, degree, age, num,deptName,limit,page } = req.body
+    sql = `select * from positions where userCode<>0 `
+    if(type!=='不限') {
+        const tempType = type === '事业编' ? 1 : 2
+        console.log(tempType)
+        sql += ` and type = ${tempType} `
+    }
+    if(english!=='不限') {
+        sql += `and english = '${english}'`
+    }
+    if(degree!=='不限') {
+        sql += `and age = '${degree}'`
+    }
+    if(age!=='不限') {
+        sql += `and age = '${age}'`
+    }
+    if(num!=='不限') {
+        if (typeof num === 'number') {  // 1，2，3
+            sql += `and requireNum = ${num}`
+        }else{
+            sql += `and requireNum>=4`   // 4个及以上
+        }
+    }
+    if(deptName!=='不限') {
+        sql += `and deptName = '${deptName}'`
+    }
+    const positions = await sequelize.query(sql)
+    const ResultPositions =positions[0].map( e => {
+        let createTime = moment(e.createdAt).format('YYYY-MM-DD HH:mm:ss')
+        // 也返回一个YYYY-MM-DD格式的时间
+        let simpleDate = moment(e.createdAt).format('YYYY-MM-DD')
+        // 状态更新：Switch
+        let Switch = ''
+        // 招聘状态
+        let statusTemp = ''
+        e.status===1 ? statusTemp='在招' : statusTemp = '已结束'
+        // 岗位类别
+        let typeTemp = ''
+        e.type===1 ? typeTemp='事业编' :typeTemp='非事业编'
+        // 当前状态
+        let HandlestatusTemp = ''
+        switch (e.Handlestatus) {
+            case 1: 
+                HandlestatusTemp = '已删除'
+                Switch = false
+                break
+            case 2: 
+                HandlestatusTemp = '审核已通过'
+                Switch = true
+                break
+            case 3: 
+                HandlestatusTemp = '未审核'
+                Switch = false
+                break
+        }
+        // isPosted=false:未投递，isPosted=true：已投递
+        return { id:e.id,positionName:e.positionName,deptName:e.deptName,address:e.address,requireNum:e.requireNum,type:typeTemp,Switch:Switch,status:statusTemp,Handlestatus:HandlestatusTemp,userCode:e.userCode,age:e.age,english:e.english,professional:e.professional,desc:e.desc,degree:e.degree,contactPhone:e.contactPhone,createDate:createTime,simpleDate:simpleDate,isPosted:false,isCollected:false}
+    })
+    const pageList = ResultPositions.filter((item,index)=>index < limit * page && index >= limit * (page - 1))
+    res.json({code:200,msg:'过滤岗位列表成功',positions:pageList,total:ResultPositions.length})
+})
+
 module.exports = router

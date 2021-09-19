@@ -309,6 +309,7 @@ const uploader = multer({storage:storage})
 router.post('/upload',uploader.array('file'),(req,res,next)=>{
     const imgOrigin =  NEWS_IMAGES_URL_DOWNLOAD
     const files = req.files
+    console.log(files)
     let temp = files.map(e=>{
         const uuid = uuidv4()
         let basename = path.basename(e.path)    //源文件名
