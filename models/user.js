@@ -21,10 +21,12 @@ module.exports = (sequelize, DataTypes) => {
     role: DataTypes.STRING,
     deptCode: DataTypes.STRING,
     desc: DataTypes.TEXT,
-    loginNum: DataTypes.INTEGER
+    loginNum: DataTypes.INTEGER,
+    status: DataTypes.INTEGER
   }, {
     sequelize,
     modelName: 'User',
+    tableName: 'users'
   });
   return User;
 };

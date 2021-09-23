@@ -6,7 +6,6 @@ const router = express.Router();
 const Dept = require('../../models/dept')
 const {DataTypes} = require('sequelize')
 const sequelize = require('../../database/connection')
-const dateHandler = require('../../utils/dateHandler')
 //1.医院管理——部门管理
 //添加部门
 router.post('/addDept',async (req,res,next)=>{
