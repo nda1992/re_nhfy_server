@@ -241,7 +241,7 @@ router.post('/uploadFile',fileUploader.array('file'),async (req,res,next) => {
 // 查看docx文档
 router.post('/getResumeFile', async (req, res, next) => {
     const { url } = req.body
-    const docxfilePath = JOBSEEKER_RESUME_URL_DOWNLOAD
+    const docxfilePath = JOBSEEKER_RESUME_URL_UPLOAD
     const arr = url.split('/').slice(-1)
     const files = fs.readdirSync(docxfilePath)
     let file = ''
@@ -261,7 +261,7 @@ router.post('/getResumeFile', async (req, res, next) => {
 
 // 将docx转为pdf
 // router.get('/toPdf', async (req, res) => {
-//     const docxfilePath = path.join(__dirname,'../../public/jobseekersFiles/')
+//     const docxfilePath = JOBSEEKER_RESUME_URL_UPLOAD
 //     const filename= '83027c09-ba02-4510-821c-7ec2b80a2bec.docx'
 //     const fullPath = path.join(docxfilePath,filename)
 //     docxConverter(fullPath,path.join(docxfilePath,'output.pdf'),function(err,result){

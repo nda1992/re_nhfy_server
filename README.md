@@ -1,19 +1,19 @@
-# 对nhfy项目的server服务端代码进行重构
-### 技术栈
+# 对nhfy项目的server服务端代码进行重构，并添加了一些新功能♥
+### 技术栈🌈
 - node -v:14.15.1
 - 框架：Express
 - 数据库：MySQL
 - ORM：sequelize
 - 文件上传：multer
 - 时间处理：moment
-### 主要功能
+### 主要功能🚀
 - 对登录后的请求全部使用token认证（可使用jwt生成token。为了方便测试项目中只定义为token字符串）
-- 处理前端(re_nhfy_client)项目中涉及到的所有请求
+- 处理[前端项目](https://github.com/nda1992/re_nhfy_client.git)中涉及到的所有请求
 
 [前端项目](https://github.com/nda1992/re_nhfy_client.git)
-### 数据库的配置(Linux环境下)
-Step1:*数据库的文件：/myapp/database/re_nhfy.sql*<br>
-Step2:
+### 数据库的配置(Linux环境下)🚴‍♀️
+**Step1**:数据库的文件：/myapp/database/re_nhfy.sql<br>
+**Step2**:初始化数据库
 ``` shell
 mysql -uroot -p123456
 create database re_nhfy
@@ -21,11 +21,11 @@ quit;
 cd /myapp/re_nhfy_server/database
 mysql -uroot -p123456 re_nhfy < re_nhfy.sql
 ```
-Step3: 
+**Step3**: 
 ```shell
 vim /re_nhfy_server/myapp/config/config.json
 ```
-Step4: *根据自己的mysql来配置dev、test、production三种环境的数据库数据库连接即可*
+**Step4**: 根据自己的mysql来配置dev、test、production三种环境的数据库数据库连接即可
 
 ### 运行项目(启动服务端)
 1. 直接在服务器上运行
@@ -37,7 +37,7 @@ npm install
 npm install supervisor -g
 supervisor .\bin\www
  ```
- ### 在docker上运行
+ ### 在docker上运行（非常推荐）😍
  **可以在Linux或Windows上安装docker，我这里是在Windows10上安装的docker，[Windows10上如何安装docker?](https://zhuanlan.zhihu.com/p/148511634)**<br>
  *进入到项目的目录下进行以下操作*
  1. 创建Dockerfile
@@ -69,6 +69,20 @@ services:
     networks:
       - app-network
 
+  webserver:
+    image: nginx:stable-alpine
+    container_name: webserver
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - ./www:/var/www
+      - ./conf.d:/etc/nginx/conf.d
+    depends_on:
+      - nodejs
+    networks:
+      - app-network
+
   db:
     image: mysql:5.7
     container_name: db
@@ -97,12 +111,16 @@ docker-compose up -d --build
 4. 查看容器的运行情况
 ```
 docker-compose ps
-CONTAINER ID   IMAGE       COMMAND                  CREATED          STATUS          PORTS                                                  NAMES
-ef374e878510   nodejs      "docker-entrypoint.s…"   13 minutes ago   Up 13 minutes   0.0.0.0:3000->3000/tcp, :::3000->3000/tcp              nodejs
-d217b90f4446   mysql:5.7   "docker-entrypoint.s…"   47 minutes ago   Up 13 minutes   33060/tcp, 0.0.0.0:3308->3306/tcp, :::3308->3306/tcp   db
+  Name                 Command               State                          Ports                       
+--------------------------------------------------------------------------------------------------------
+db          docker-entrypoint.sh --cha ...   Up      0.0.0.0:3308->3306/tcp,:::3308->3306/tcp, 33060/tcp
+nodejs      docker-entrypoint.sh npm start   Up      0.0.0.0:3000->3000/tcp,:::3000->3000/tcp           
+webserver   /docker-entrypoint.sh ngin ...   Up      0.0.0.0:8080->80/tcp,:::8080->80/tcp    
 ```
-
-如果上述命令出现问题，请注意查看对应容器的log日志
+Tips:如果上述命令出现问题，请注意查看对应容器的log日志
 ```
 docker logs container-name
 ```
+
+## Warnings😥
+- 因为文件夹或变量太多了，一时想不到好的命名，很多文件或变量的定义不规范，请略过啊🤗......
