@@ -19,6 +19,7 @@ const employeeRouter = require('./routes/hospital/employee')
 // const operationRouter = require('./routes/QueryTheam/operation/operation')
 // const rankRouter = require('./routes/QueryTheam/rank/rank')
 // const othersRouter = require('./routes/QueryTheam/others/others')
+const basicRouter = require('./routes/QueryTheam/basic/basic')
 const app = express();
 
 const {varifyToken} = require('./utils/token')
@@ -84,6 +85,7 @@ app.use('/employee', employeeRouter)
 // app.use('/QueryTheam/revenue',revenueRouter)
 // app.use('/QueryTheam/rank',rankRouter)
 // app.use('/QueryTheam/others',othersRouter)
+app.use('/QueryTheam/basic',basicRouter)
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
   next(createError(404));
