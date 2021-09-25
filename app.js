@@ -10,6 +10,7 @@ const reportRouter = require('./routes/report/report')
 const newsRouter = require('./routes/news/news')
 const recruitRouter = require('./routes/recruit/recruit')
 const positionRouter = require('./routes/recruit/position')
+const websiteRouter = require('./routes/website/website')
 const reportmakeRouter = require('./routes/reportmake/reportmake')
 const employeeRouter = require('./routes/hospital/employee')
 // const specialQueryRouter = require('./routes/reportmake/specialQuery')
@@ -44,8 +45,8 @@ app.all('*',(req,res,next)=>{
 //所有进来的请求都需要携带token
 app.use((req,res,next)=>{
   let url = req.url
-  // 求职相关的所有请求只匹配position开头
-  const positionArr = [ '/recruit/getPositionList', '/position/', '/users/searchDept', '/users/register' ]
+  // 求职和官网的所有请求只匹配position/website开头
+  const positionArr = [ '/recruit/getPositionList', '/position/', '/users/searchDept', '/users/register', '/website' ]
   let trueUrl = -1
   for(let p of positionArr){
     if (url.search(p)!==-1) {
@@ -74,6 +75,7 @@ app.use('/report',reportRouter)
 app.use('/news',newsRouter)
 app.use('/recruit',recruitRouter)
 app.use('/position',positionRouter)
+app.use('/website', websiteRouter)
 app.use('/reportmake',reportmakeRouter)
 app.use('/employee', employeeRouter)
 // app.use('/reportmake/specialQuery',specialQueryRouter)

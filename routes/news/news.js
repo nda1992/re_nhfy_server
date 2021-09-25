@@ -11,6 +11,7 @@ const sequelize = require('../../database/connection')
 const User = require('../../models/user')
 const Category = require('../../models/category')
 const Dept = require('../../models/dept')
+const Menu = require('../../models/menu')
 const moment = require('moment-timezone')
 const { NEWS_IMAGES_URL_UPLOAD, NEWS_IMAGES_URL_DOWNLOAD, NEWS_ATTACHMENTFILE_URL_UPLOAD, NEWS_ATTACHMENTFILE_URL_DOWNLOAD } = require('../../config/network')
 // 设置时区
@@ -355,6 +356,30 @@ router.post('/uploadFile',Fileuploader.array('file'), async (req,res,next)=>{
     })
     res.json({code:200,files:FileArr,msg:'文件上传成功'})
     // res.json({code: 200,msg:'success'})
+})
+
+// 上传官网菜单
+router.post('/submitMenu', async(req, res, next) => {
+    const { parent, children } = req.body
+    const parent_menu = { name: parent, level:1, parent:'无' }
+    let menus = []
+    let insert = []
+    // 1个以上，拆分成数组
+    if (children.search('#') !== -1) {
+        menus = children.trim().split('#').map(e => {
+            return { name:e, level:2, parent:parent }
+        })
+        insert = [ parent_menu, ...menus ]
+    } else {
+        insert = [ parent_menu, { name: children, level: 2, parent: parent} ]
+    }
+    await Menu(sequelize,DataTypes).bulkCreate(insert).then(result => {
+        if (result) {
+            res.json({ code: 200, msg: 'success' })
+        }else{
+            res.json({ code: 201,msg: '添加失败' })
+        }
+    })
 })
 
 module.exports = router
