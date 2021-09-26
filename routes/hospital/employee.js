@@ -79,4 +79,20 @@ router.get('/deleteUser', async (req, res, next) => {
     }
 })
 
+// 恢复已删除的用户
+router.get('/recoverUser', async (req, res, next) => {
+    const { role, id } = req.query
+    if (role !== 'admin') {
+        res.json({code:201,msg:'你没有权限进行操作'})
+    } else {
+        await User(sequelize, DataTypes).update({status: 0},{where:{id:id}}).then(result => {
+            if(result) {
+                res.json({code:200,msg:'用户恢复成功'})
+            } else {
+                res.json({code:202,msg:'用户恢复失败'})
+            }
+        })
+    }
+})
+
 module.exports = router

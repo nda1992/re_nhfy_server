@@ -10,6 +10,7 @@ router.post('/kssrfl', async (req, res, next) => {
     const end = endDate.concat(' 23:59:59')
     let sql = ``
     switch (type) {
+      // 门诊
         case '1':
             sql = `SELECT ROW_NUMBER() OVER (ORDER BY DEPT_NAME) AS xh, DEPT_NAME,
             SUM(CASE WHEN 财务分类 IN ('诊查费','病理会诊') THEN 金额 ELSE 0 END) 诊察费,
@@ -26,6 +27,8 @@ router.post('/kssrfl', async (req, res, next) => {
             SUM(CASE WHEN 财务分类 IN ('输血','其他','空调降温','血液制品','病理摄影','营养制剂') THEN 金额 ELSE 0 END) 其他费,
             SUM(CASE WHEN 财务分类 IN ('免疫','细菌','组织学诊断','化验','输血前化验','内分泌糖尿病','内分泌甲状腺','分子病理诊断','病理图像分析','免疫组化','内分泌肾上腺','细胞学诊断','生化','临检','肿瘤实验室','核医学科SPECI','肝病研究中心','诊查费','病理会诊','检查','CT','放射','核磁','黑白B超','腔内B超','浅表B超','腹部B超','脑电图','心电图','心脏B超','血管B超','尸体病检','B超费','X线胶片','骨密度','护理','治疗','输氧','护婴','DSA','碎石','注射','血液透析','床位','接生','手术','麻醉','眼科晶状体手术','材料','高值耗材','西药','中草药','中成药','输血','其他','空调降温','血液制品','病理摄影','营养制剂') THEN 金额 ELSE 0 END) 总费用 
             FROM (SELECT DEPT_NAME,STAT_DXM_NAME 财务分类,SUM(ACVALUE) 金额 FROM CHG.CHG_OUTPATIENT_COST WHERE CHARGE_TIME BETWEEN TO_DATE('${start}','yyyy-MM-dd hh24:mi:ss') AND TO_DATE('${end}', 'yyyy-MM-dd hh24:mi:ss') AND IS_DELETE='N' GROUP BY STAT_DXM_NAME,DEPT_NAME ORDER BY DEPT_NAME)temp GROUP BY DEPT_NAME`
+            break
+      // 住院      
         case '2':
             sql = `SELECT ROW_NUMBER() OVER (ORDER BY DEPT_NAME) AS xh, 
             dept_name as DEPT_NAME,
@@ -48,6 +51,7 @@ router.post('/kssrfl', async (req, res, next) => {
             on a.STATITEM_CODE = b.CODE 
             where a.CHARGE_DATE between to_date('${start}','yyyy-MM-dd hh24:mi:ss') and to_date('${end}','yyyy-MM-dd hh24:mi:ss') and a.IS_DELETE='N' group by a.dept_name,a.STATITEM_CODE,b.ITEM_NAME
             )temp GROUP BY DEPT_NAME`
+            break
         }
     const result = (await connection).execute(sql)
     const items = (await result).rows
