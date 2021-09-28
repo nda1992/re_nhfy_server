@@ -5,11 +5,12 @@ const mysql = require('mysql')
 const {connection} = require('../../../utils/mysqlConnection')
 
 // 按时间段统计门急诊人次
-router.post('/getOupatientAmount', async (req, res, next) => {
+router.post('/getOupatientAndInpatientAmount', async (req, res, next) => {
     const { startDate, endDate } = req.body
-    let sql = `SELECT SUM(门诊人次+急诊人次)门急诊人次 FROM basic WHERE 统计时间 BETWEEN ? AND ?`
+    let sql = `SELECT SUM(门诊人次+急诊人次) 门急诊人次,SUM(入院人数) 入院人数,SUM(出院人数) 出院人数 FROM basic WHERE 统计时间 BETWEEN ? AND ?`
     const inserts = [ startDate, endDate ]
     sql = mysql.format(sql, inserts)
+    console.log(sql)
     connection.query(sql, function(err, results){
         res.json({code:200,items: results})
     })
@@ -23,9 +24,14 @@ router.post('/getOutpatientRevenue', async (req, res, next) => {
     switch (parseInt(type)) {
         // 门诊
         case 1:
-            sql = `SELECT SUM(a.门急诊诊察收入)门急诊诊察收入,SUM(a.门急诊检查收入)门急诊检查收入,
+            sql = `SELECT 
+            SUM(a.门急诊诊察收入+a.门急诊检查收入+a.门急诊化验收入+a.门急诊护理收入+a.门急诊治疗收入+a.门急诊手术收入+a.门急诊卫生材料收入+a.门急诊西药收入+a.门急诊中成药收入+a.门急诊中药饮片收入+a.门急诊其他收入) 门急诊总收入,
+            SUM(a.门急诊诊察收入+a.门急诊护理收入+a.门急诊治疗收入+a.门急诊手术收入+a.门急诊其他收入) 门急诊医疗服务收入,
+            SUM(a.门急诊诊察收入+a.门急诊检查收入+a.门急诊化验收入+a.门急诊护理收入+a.门急诊治疗收入+a.门急诊手术收入+a.门急诊其他收入) 门急诊医疗有效收入,
+            SUM(a.门急诊诊察收入)门急诊诊察收入,SUM(a.门急诊检查收入)门急诊检查收入,
             SUM(a.门急诊化验收入)门急诊化验收入,SUM(a.门急诊护理收入)门急诊护理收入,SUM(a.门急诊治疗收入)门急诊治疗收入,
-            SUM(a.门急诊手术收入)门急诊手术收入,SUM(a.门急诊卫生材料收入)门急诊卫生材料收入,SUM(a.门急诊西药收入)门急诊西药收入,
+            SUM(a.门急诊西药收入+a.门急诊中成药收入+a.门急诊中药饮片收入) 门急诊药品收入,
+            SUM(a.门急诊手术收入)门急诊手术收入,SUM(a.门急诊卫生材料收入) 门急诊卫生材料收入,SUM(a.门急诊西药收入)门急诊西药收入,
             SUM(a.门急诊中成药收入)门急诊中成药收入,SUM(a.门急诊中药饮片收入)门急诊中药饮片收入,SUM(a.门急诊其他收入)门急诊其他收入,
             ROUND(SUM(a.门急诊西药收入+a.门急诊中成药收入-b.门急诊国家谈判品种)/SUM(a.门急诊诊察收入+a.门急诊检查收入+a.门急诊化验收入+a.门急诊护理收入+a.门急诊治疗收入+a.门急诊手术收入+a.门急诊卫生材料收入+a.门急诊西药收入+a.门急诊中成药收入+a.门急诊中药饮片收入+a.门急诊其他收入),4)*100 药占比,
             ROUND(SUM(a.门急诊卫生材料收入)/(SUM(a.门急诊诊察收入+a.门急诊检查收入+a.门急诊化验收入+a.门急诊护理收入+a.门急诊治疗收入+a.门急诊手术收入+a.门急诊卫生材料收入+a.门急诊西药收入+a.门急诊中成药收入+a.门急诊中药饮片收入+a.门急诊其他收入)-SUM(a.门急诊西药收入+a.门急诊中成药收入+a.门急诊中药饮片收入)),4)*100 耗占比
@@ -34,7 +40,13 @@ router.post('/getOutpatientRevenue', async (req, res, next) => {
             break
         // 住院
         case 2:
-            sql = `SELECT SUM(a.住院床位收入)住院床位收入,SUM(a.住院诊察收入)住院诊察收入,SUM(a.住院检查收入)住院检查收入,
+            sql = `SELECT
+            SUM(a.住院床位收入+a.住院诊察收入+a.住院检查收入+a.住院化验收入+a.住院治疗收入+a.住院护理收入+a.住院手术收入+a.住院高值卫生材料收入+a.住院其他卫生材料收入+a.住院西药收入+a.住院中药饮片收入+a.住院中成药收入+a.住院其他收入) 住院总收入,
+            SUM(a.住院床位收入+a.住院诊察收入+a.住院治疗收入+a.住院护理收入+a.住院手术收入+a.住院其他收入) 住院医疗服务收入,
+            SUM(a.住院床位收入+a.住院诊察收入+a.住院检查收入+a.住院化验收入+a.住院治疗收入+a.住院护理收入+a.住院手术收入+a.住院其他收入) 住院医疗有效收入,
+            SUM(a.住院西药收入+a.住院中药饮片收入+a.住院中成药收入) 住院药品收入,
+            SUM(a.住院高值卫生材料收入+a.住院其他卫生材料收入) 住院卫生材料收入,
+            SUM(a.住院床位收入)住院床位收入,SUM(a.住院诊察收入)住院诊察收入,SUM(a.住院检查收入)住院检查收入,
             SUM(a.住院化验收入)住院化验收入,SUM(a.住院治疗收入)住院治疗收入,SUM(a.住院护理收入)住院护理收入,SUM(a.住院手术收入)住院手术收入,
             SUM(a.住院高值卫生材料收入)住院高值卫生材料收入,SUM(a.住院其他卫生材料收入)住院其他卫生材料收入,SUM(a.住院西药收入)住院西药收入,
             SUM(a.住院中药饮片收入)住院中药饮片收入,SUM(a.住院中成药收入)住院中成药收入,SUM(a.住院其他收入)住院其他收入,
@@ -45,7 +57,11 @@ router.post('/getOutpatientRevenue', async (req, res, next) => {
             break
         // 全院    
         case 3:
-            sql = `SELECT SUM(a.住院床位收入)全院床位收入,
+            sql = `SELECT
+            SUM(a.住院床位收入+a.住院诊察收入+a.门急诊诊察收入+a.住院检查收入+a.门急诊检查收入+a.住院化验收入+a.门急诊化验收入+a.住院治疗收入+a.门急诊治疗收入+a.住院护理收入+a.门急诊护理收入+a.住院手术收入+a.门急诊手术收入+a.住院高值卫生材料收入+a.门急诊卫生材料收入+a.住院其他卫生材料收入+a.住院西药收入+a.住院中药饮片收入+a.住院中成药收入+a.门急诊西药收入+a.门急诊中成药收入+a.门急诊中药饮片收入+a.住院其他收入+a.门急诊其他收入) 全院总收入,
+            SUM(a.住院床位收入+a.住院诊察收入+a.门急诊诊察收入+a.住院治疗收入+a.门急诊治疗收入+a.住院护理收入+a.门急诊护理收入+a.住院手术收入+a.门急诊手术收入+a.住院其他收入+a.门急诊其他收入)全院医疗服务收入,
+            SUM(a.住院床位收入+a.住院诊察收入+a.门急诊诊察收入+a.住院检查收入+a.门急诊检查收入+a.住院化验收入+a.门急诊化验收入+a.住院治疗收入+a.门急诊治疗收入+a.住院护理收入+a.门急诊护理收入+a.住院手术收入+a.门急诊手术收入+a.住院其他收入+a.门急诊其他收入)全院医疗有效收入,
+            SUM(a.住院床位收入)全院床位收入,
             SUM(a.住院诊察收入+a.门急诊诊察收入)全院诊察收入,
             SUM(a.住院检查收入+a.门急诊检查收入)全院检查收入,
             SUM(a.住院化验收入+a.门急诊化验收入)全院化验收入,
@@ -64,7 +80,7 @@ router.post('/getOutpatientRevenue', async (req, res, next) => {
     const inserts = [ startDate, endDate ]
     sql = mysql.format(sql, inserts)
     connection.query(sql,function(err, results){
-        res.json({code:200,items: results, msg: 'success',tip:tip})
+        res.json({code:200,items: results, msg: 'success',tip: tip})
     })
 })
 module.exports = router

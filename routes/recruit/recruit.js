@@ -213,8 +213,9 @@ router.post('/uploadSwiper',swiperUploader.array('file'),async (req,res,next)=>{
 //2. 查询某个管理员已经上传的所有轮播图链接
 router.get('/getAllSwiperImgs', async (req, res, next) => {
     const { userCode, limit, page} = req.query
-    // 计数器，status=1的数量，用来控制只能最多选择多少张轮播图
+    // 计数器，status=1和websiteStatus=1的数量，用来控制只能最多选择多少张轮播图
     let num = 0
+    let websiteNum = 0
     await Swiper(sequelize,DataTypes).findAll({where:{userCode:userCode}}).then( result => {
         if(result) {
             const resultTemp = result.map(e => {
