@@ -16,7 +16,8 @@ module.exports = (sequelize, DataTypes) => {
   Swiper.init({
     userCode: DataTypes.STRING,
     url: DataTypes.STRING,
-    status: DataTypes.INTEGER
+    status: DataTypes.INTEGER,
+    websiteStatus: DataTypes.INTEGER
   }, {
     sequelize,
     modelName: 'Swiper',

@@ -75,7 +75,12 @@ router.post("/login",async (req,res,next)=>{
       if(!result){
         res.json({code:202,msg:"用户不存在,请先注册"})
       }else{
-        //密码对比
+        if (result.status === 0) {
+          res.json({code:204,msg:'登陆失败,你的账号未通过审核'})
+        } else if(result.status === 2) {
+          res.json({code:204,msg:'登陆失败,你的账号已删除'})
+        } else {
+          //密码对比
         const hash = await comparePasswd.comparePasswd(password,result.password)
         if(hash){
           const token = createToken()
@@ -88,6 +93,7 @@ router.post("/login",async (req,res,next)=>{
           })
         }else{
           res.json({code:203,msg:"密码错误,登录失败"})
+        }
         }
       }
     })

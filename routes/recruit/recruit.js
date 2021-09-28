@@ -200,7 +200,7 @@ router.post('/uploadSwiper',swiperUploader.array('file'),async (req,res,next)=>{
         })
         return {file:imgOrigin+newname}
     })
-    await Swiper(sequelize,DataTypes).create({url:temp[0].file,userCode:userCode,status:0}).then(result => {
+    await Swiper(sequelize,DataTypes).create({url:temp[0].file,userCode:userCode,status:0, websiteStatus: 0}).then(result => {
         if(result){
             res.json({code:200,msg:'图片上传成功',file:result})
         }else{

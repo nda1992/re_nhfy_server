@@ -17,9 +17,9 @@ router.post('/getOupatientAmount', async (req, res, next) => {
 
 // 按时间段统计门急诊、住院或全院费用
 router.post('/getOutpatientRevenue', async (req, res, next) => {
-    console.log(req.body)
     const { startDate, endDate, type } = req.body   // type=1:门诊，type=2:住院，type=3:全院
     let sql = ``
+    let tip = ``
     switch (parseInt(type)) {
         // 门诊
         case 1:
@@ -30,6 +30,7 @@ router.post('/getOutpatientRevenue', async (req, res, next) => {
             ROUND(SUM(a.门急诊西药收入+a.门急诊中成药收入-b.门急诊国家谈判品种)/SUM(a.门急诊诊察收入+a.门急诊检查收入+a.门急诊化验收入+a.门急诊护理收入+a.门急诊治疗收入+a.门急诊手术收入+a.门急诊卫生材料收入+a.门急诊西药收入+a.门急诊中成药收入+a.门急诊中药饮片收入+a.门急诊其他收入),4)*100 药占比,
             ROUND(SUM(a.门急诊卫生材料收入)/(SUM(a.门急诊诊察收入+a.门急诊检查收入+a.门急诊化验收入+a.门急诊护理收入+a.门急诊治疗收入+a.门急诊手术收入+a.门急诊卫生材料收入+a.门急诊西药收入+a.门急诊中成药收入+a.门急诊中药饮片收入+a.门急诊其他收入)-SUM(a.门急诊西药收入+a.门急诊中成药收入+a.门急诊中药饮片收入)),4)*100 耗占比
             FROM basic a LEFT JOIN basic_new b on a.统计时间=b.统计时间 WHERE a.统计时间 BETWEEN ? AND ?`
+            tip = '门急诊收入和药耗占比'
             break
         // 住院
         case 2:
@@ -40,6 +41,7 @@ router.post('/getOutpatientRevenue', async (req, res, next) => {
             ROUND(SUM(a.住院西药收入+a.住院中成药收入-b.住院国家谈判品种)/SUM(a.住院床位收入+a.住院诊察收入+a.住院检查收入+a.住院化验收入+a.住院治疗收入+a.住院护理收入+a.住院手术收入+a.住院高值卫生材料收入+a.住院其他卫生材料收入+a.住院西药收入+a.住院中成药收入+a.住院中药饮片收入+a.住院其他收入),4)*100 药占比,
             ROUND(SUM(a.住院高值卫生材料收入+a.住院其他卫生材料收入)/(SUM(a.住院床位收入+a.住院诊察收入+a.住院检查收入+a.住院化验收入+a.住院治疗收入+a.住院护理收入+a.住院手术收入+a.住院高值卫生材料收入+a.住院其他卫生材料收入+a.住院西药收入+a.住院中成药收入+a.住院中药饮片收入+a.住院其他收入)-SUM(a.住院西药收入+a.住院中成药收入+a.住院中药饮片收入)),4)*100 耗占比
             FROM basic a LEFT JOIN basic_new b ON a.统计时间=b.统计时间 WHERE a.统计时间 BETWEEN ? AND ?`
+            tip = '住院收入和药耗占比'
             break
         // 全院    
         case 3:
@@ -56,12 +58,13 @@ router.post('/getOutpatientRevenue', async (req, res, next) => {
             ROUND(SUM(a.住院西药收入+a.住院中成药收入-b.住院国家谈判品种+a.门急诊西药收入+a.门急诊中成药收入-b.门急诊国家谈判品种)/SUM(a.住院床位收入+a.住院诊察收入+a.住院检查收入+a.住院化验收入+a.住院治疗收入+a.住院护理收入+a.住院手术收入+a.住院高值卫生材料收入+a.住院其他卫生材料收入+a.住院西药收入+a.住院中成药收入+a.住院中药饮片收入+a.住院其他收入+a.门急诊诊察收入+a.门急诊检查收入+a.门急诊化验收入+a.门急诊护理收入+a.门急诊治疗收入+a.门急诊手术收入+a.门急诊卫生材料收入+a.门急诊西药收入+a.门急诊中成药收入+a.门急诊中药饮片收入+a.门急诊其他收入),4)*100 药占比,
             ROUND(SUM(a.住院高值卫生材料收入+a.住院其他卫生材料收入+a.门急诊卫生材料收入)/(SUM(a.门急诊诊察收入+a.门急诊检查收入+a.门急诊化验收入+a.门急诊护理收入+a.门急诊治疗收入+a.门急诊手术收入+a.门急诊卫生材料收入+a.门急诊西药收入+a.门急诊中成药收入+a.门急诊中药饮片收入+a.门急诊其他收入+a.住院床位收入+a.住院诊察收入+a.住院检查收入+a.住院化验收入+a.住院治疗收入+a.住院护理收入+a.住院手术收入+a.住院高值卫生材料收入+a.住院其他卫生材料收入+a.住院西药收入+a.住院中成药收入+a.住院中药饮片收入+a.住院其他收入)-SUM(a.门急诊西药收入+a.门急诊中成药收入+a.门急诊中药饮片收入+a.住院西药收入+a.住院中成药收入+a.住院中药饮片收入)),4)*100 耗占比
             FROM basic a LEFT JOIN basic_new b ON a.统计时间 = b.统计时间 WHERE a.统计时间 BETWEEN ? AND ?`
+            tip = '全院收入和药耗占比'
             break
     }
     const inserts = [ startDate, endDate ]
     sql = mysql.format(sql, inserts)
     connection.query(sql,function(err, results){
-        res.json({code:200,items: results, msg: 'success'})
+        res.json({code:200,items: results, msg: 'success',tip:tip})
     })
 })
 module.exports = router
