@@ -32,5 +32,16 @@ router.get('/getMenusList', async (req,res,next) => {
     })
 })
 
+// 查询指定parent的所有menus
+router.get('/getMenusByParent', async (req, res, next) =>{
+    await Menu(sequelize,DataTypes).findAll({ where: { parent: { [Op.notIn]: ['无'] } }}).then(result => {
+        if(result) {
+            const items = result.map(e => e.name)
+            res.json({ code:200, items:items })
+        } else {
+            res.json({ code:201, msg: 'error'})
+        }
+    })
+})
 
 module.exports = router
