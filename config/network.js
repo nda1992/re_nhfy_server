@@ -28,7 +28,13 @@ const WEBSITE_VIDEO_UPLOAD = path.join(__dirname, '../public/websiteVideos/')
 // 视频封面上传
 const VIDEO_COVER_UPLOAD = path.join(__dirname, '../public/websiteVideos/cover/')
 
-// 客户端下载
+// 医生头像上传
+const DOCTOR_AVATAR_UPLOAD = path.join(__dirname, '../public/doctorsAvatar/')
+
+// 常用网站图片上传
+const USUALLY_WEBSITE_IMG_UPLOAD = path.join(__dirname, '../public/usuallywebsite/')
+
+// 客户端下载的链接
 
 // 管理员默认头像地址
 const ADMIN_DEFAULT_AVATAR_URL_DOWNLOAD = 'http://localhost:3000/images/avatar/defaultImg.png'
@@ -60,6 +66,12 @@ const WEBSITE_VIDEO_DOWNLOAD = 'http://localhost:3000/websiteVideos/'
 // 视频封面下载
 const VIDEO_COVER_DOWNLOAD = 'http://localhost:3000/websiteVideos/cover/'
 
+// 医生头像下载
+const DOCTOR_AVATAR_DOWNLOAD = 'http://localhost:3000/doctorsAvatar/'
+
+// 常用网站图片下载
+const USUALLY_WEBSITE_IMG_DOWNLOAD = 'http://localhost:3000/usuallywebsite/'
+
 module.exports = {
     BASE_URL,
     ADMIN_AVATAR_URL_UPLOAD,
@@ -70,6 +82,8 @@ module.exports = {
     SWIPER_IMAGES_URL_UPLOAD,
     WEBSITE_VIDEO_UPLOAD,
     VIDEO_COVER_UPLOAD,
+    DOCTOR_AVATAR_UPLOAD,
+    USUALLY_WEBSITE_IMG_UPLOAD,
     ADMIN_AVATAR_URL_DOWNLOAD,
     NEWS_IMAGES_URL_DOWNLOAD,
     NEWS_ATTACHMENTFILE_URL_DOWNLOAD,
@@ -79,5 +93,7 @@ module.exports = {
     JOBSEEKER_DEFAULT_AVATAR_URL_DOWNLOAD,
     ADMIN_DEFAULT_AVATAR_URL_DOWNLOAD,
     WEBSITE_VIDEO_DOWNLOAD,
-    VIDEO_COVER_DOWNLOAD
+    VIDEO_COVER_DOWNLOAD,
+    DOCTOR_AVATAR_DOWNLOAD,
+    USUALLY_WEBSITE_IMG_DOWNLOAD
 }

@@ -14,6 +14,7 @@ const websiteRouter = require('./routes/website/website')
 const getnewsRouter = require('./routes/website/getnews')
 const reportmakeRouter = require('./routes/reportmake/reportmake')
 const employeeRouter = require('./routes/hospital/employee')
+const websitemanagerRouter = require('./routes/websitemanager/manager')
     // const specialQueryRouter = require('./routes/reportmake/specialQuery')
     // 查询主题的相关路由
     // const revenueRouter = require('./routes/QueryTheam/revenue/revenue')
@@ -48,7 +49,7 @@ app.all('*', (req, res, next) => {
 app.use((req, res, next) => {
     let url = req.url
         // 求职和官网的所有请求只匹配position/website开头
-    const positionArr = ['/recruit/getPositionList', '/position/', '/users/searchDept', '/users/register', '/website']
+    const positionArr = ['/recruit/getPositionList', '/position/', '/users/searchDept', '/users/register', '/website', '/news/searchDept']
     let trueUrl = -1
     for (let p of positionArr) {
         if (url.search(p) !== -1) {
@@ -80,6 +81,7 @@ app.use('/website', websiteRouter)
 app.use('/website/news', getnewsRouter)
 app.use('/reportmake', reportmakeRouter)
 app.use('/employee', employeeRouter)
+app.use('/websitemanager', websitemanagerRouter)
     // 主题查询的路由
     // app.use('/reportmake/specialQuery', specialQueryRouter)
     // app.use('/QueryTheam/operation', operationRouter)

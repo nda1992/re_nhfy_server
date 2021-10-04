@@ -9,7 +9,8 @@ const sequelize = require('../../database/connection')
 const Menu = require('../../models/menu')
 const Advice = require('../../models/advice')
 const Video = require('../../models/video')
-const usuallyWebsite = require('../../models/usuallywebsite')
+const News = require('../../models/news')
+const Doctor = require('../../models/doctor')
 const { WEBSITE_VIDEO_UPLOAD, WEBSITE_VIDEO_DOWNLOAD, VIDEO_COVER_UPLOAD, VIDEO_COVER_DOWNLOAD } = require('../../config/network')
 const moment = require('moment-timezone')
     // 设置时区
@@ -220,9 +221,67 @@ router.post('/deleteVideoById', async(req, res, next) => {
     })
 })
 
-// 上传常用网站
-router.post('/postUsuallyWebsiteInfo', async(req, res, next) => {
-    const data = req.body
-    res.json({ code: 200, msg: 'success' })
+// 获取学科荟萃信息
+router.get('/getSubjectAssembleList', async(req, res, next) => {
+    const { category, limit, page } = req.query
+    await News(sequelize, DataTypes).findAll({ where: { category: category, status: 'published' } }).then(result => {
+        if (result) {
+            const newsItems = result.map(e => {
+                return {
+                    id: e.id,
+                    deptName: e.deptName,
+                    title: e.title
+                }
+            })
+            const pageList = newsItems.filter((item, index) => index < limit * page && index >= limit * (page - 1))
+            res.json({ code: 200, items: pageList, total: newsItems.length })
+        } else {
+            res.json({ code: 201, msg: '获取数据失败' })
+        }
+    })
+})
+
+// 获取专家列表
+router.get('/getAllExpertList', async(req, res, next) => {
+    const { grade, page, limit } = req.query
+    await Doctor(sequelize, DataTypes).findAll({ where: { grade: grade } }).then(result => {
+        if (result) {
+            const doctorsItems = result.map(e => {
+                return {
+                    id: e.id,
+                    avatar: e.avatar,
+                    username: e.username,
+                    jobTitle: e.jobTitle,
+                    deptName: e.deptName
+                }
+            })
+            const pageList = doctorsItems.filter((item, index) => index < limit * page && index >= limit * (page - 1))
+            res.json({ code: 200, items: pageList, total: doctorsItems.length })
+        } else {
+            res.json({ code: 201, msg: '获取列表失败' })
+        }
+    })
+})
+
+// 根据id获取医生详细信息
+router.get('/getDoctorDetailById', async(req, res, next) => {
+    const { id } = req.query
+    await Doctor(sequelize, DataTypes).findOne({ where: { id: id } }).then(result => {
+        if (result) {
+            const item = {
+                username: result.username,
+                deptName: result.deptName,
+                avatar: result.avatar,
+                jobTitle: result.jobTitle,
+                education: result.education,
+                desc: result.desc,
+                email: result.email,
+                professional: result.professional
+            }
+            res.json({ code: 200, item: item })
+        } else {
+            res.json({ code: 201, msg: '获取信息失败' })
+        }
+    })
 })
 module.exports = router
