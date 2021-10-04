@@ -271,6 +271,28 @@ router.get('/SetSwiperStatus', async(req, res, next) => {
     }
 })
 
+// 根据id更新官网轮播图状态
+router.get('/SetWebsiteSwiperStatus', async(req, res, next) => {
+    const { websiteSwitch, id } = req.query
+    if (JSON.parse(websiteSwitch)) {
+        await Swiper(sequelize, DataTypes).update({ websiteStatus: 1 }, { where: { id: id } }).then((result) => {
+            if (result) {
+                res.json({ code: 200, msg: '状态已更新' })
+            } else {
+                res.json({ code: 201, msg: '状态更新失败' })
+            }
+        })
+    } else {
+        await Swiper(sequelize, DataTypes).update({ websiteStatus: 0 }, { where: { id: id } }).then((result) => {
+            if (result) {
+                res.json({ code: 200, msg: '状态已更新' })
+            } else {
+                res.json({ code: 201, msg: '状态更新失败' })
+            }
+        })
+    }
+})
+
 // 5.获取轮播图到招聘系统中
 router.get('/getSwiperImgs2Run', async(req, res, next) => {
     await Swiper(sequelize, DataTypes).findAll({ where: { status: 1 } }).then((swiper) => {
