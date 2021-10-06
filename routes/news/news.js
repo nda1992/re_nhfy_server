@@ -255,12 +255,13 @@ router.get('/getnewsList', async(req, res, next) => {
 
 // 根据switch的值更新文章的发表状态
 router.post('/updateNewsStatus', async(req, res, next) => {
-    const { id, role, Switch } = req.body
+  const { id, role, Switch } = req.body
+  const update_time = new Date()
         // 审核通过
     if (Switch) {
         const newsStatusTemp = 1
         const statusTemp = 'published'
-        await News(sequelize, DataTypes).update({ newsStatus: newsStatusTemp, status: statusTemp }, { where: { id: id } }).then(result => {
+        await News(sequelize, DataTypes).update({ newsStatus: newsStatusTemp, status: statusTemp, createTime: moment(update_time).format('YYYY-MM-DD HH:mm:ss') }, { where: { id: id } }).then(result => {
                 if (result) {
                     res.json({ code: 200, msg: "更新成功" })
                 } else {
@@ -271,7 +272,7 @@ router.post('/updateNewsStatus', async(req, res, next) => {
     } else {
         const newsStatusTemp = 3
         const statusTemp = 'published'
-        await News(sequelize, DataTypes).update({ newsStatus: newsStatusTemp }, { where: { id: id } }).then(result => {
+        await News(sequelize, DataTypes).update({ newsStatus: newsStatusTemp, createTime: moment(update_time).format('YYYY-MM-DD HH:mm:ss') }, { where: { id: id } }).then(result => {
             if (result) {
                 res.json({ code: 200, msg: "更新成功" })
             } else {

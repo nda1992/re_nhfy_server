@@ -17,31 +17,31 @@ const moment = require('moment-timezone')
 moment.tz.setDefault('Asia/Shanghai')
     // 获取所有menus
 router.get('/getMenusList', async(req, res, next) => {
-    let id = 1
-    await Menu(sequelize, DataTypes).findAll().then((result) => {
-        if (result) {
-            // 保存临时的children menus
-            let ctemp = []
-            const parents = result.filter(c => c.parent === '无')
-            const childrens = result.filter(c => c.parent !== '无')
-                // 最终要返回的menus数组
-            const items = parents.map(e => {
-                let item_temp = []
-                childrens.forEach(c => {
-                    if (c.parent === e.name) {
-                        ctemp.push({ name: c.name, index: c.index })
-                    }
-                })
-                item_temp = { id: id, parent: { name: e.name, index: e.index }, children: ctemp }
-                ctemp = []
-                id++
-                return item_temp
-            })
-            res.json({ code: 200, items: items })
-        } else {
-            res.json({ code: 201, msg: '获取数据失败' })
-        }
+  let id = 1
+  await Menu(sequelize, DataTypes).findAll().then((result) => {
+  if (result) {
+    // 保存临时的children menus
+    let ctemp = []
+    const parents = result.filter(c => c.parent === '无')
+    const childrens = result.filter(c => c.parent !== '无')
+          // 最终要返回的menus数组
+    const items = parents.map(e => {
+        let item_temp = []
+        childrens.forEach(c => {
+            if (c.parent === e.name) {
+                ctemp.push({ name: c.name, index: c.index })
+            }
+        })
+        item_temp = { id: id, parent: { name: e.name, index: e.index }, children: ctemp }
+        ctemp = []
+        id++
+        return item_temp
     })
+      res.json({ code: 200, items: items })
+    } else {
+      res.json({ code: 201, msg: '获取数据失败' })
+    }
+  })
 })
 
 // 查询指定parent的所有menus
@@ -148,38 +148,40 @@ router.post('/uploadCover', Coveruploader.array('file'), async(req, res, next) =
     })
 })
 
-// 根据userCode获取所有的视频列表
+// 管理员根据userCode获取所有的视频列表
 router.get('/getAllVideos', async(req, res, next) => {
-    const { userCode, limit, page } = req.query
-    let num = 0
-    await Video(sequelize, DataTypes).findAll({ where: { userCode: userCode } }).then(result => {
-        if (result) {
-            const Videoitems = result.map(e => {
-                let Switch = e.status === 1 ? true : false
-                if (e.status === 1) num++
-                    const tempDate = moment(e.createdAt).format('YYYY-MM-DD HH:mm:ss')
-                return { id: e.id, url: e.url, title: e.title, deptName: e.deptName, userCode: e.userCode, category: e.category, Switch: Switch, createdDate: tempDate, clickNum: e.clickNum, cover: e.cover }
-            })
-            const pageList = Videoitems.filter((item, index) => index < limit * page && index >= limit * (page - 1))
-            res.json({ code: 200, msg: '获取视频列表成功', items: pageList, total: Videoitems.length, num: num })
-        } else {
-            res.json({ code: 201, msg: '获取视频列表失败' })
-        }
-    })
+  const { userCode, limit, page } = req.query
+  let num = 0
+  await Video(sequelize, DataTypes).findAll({ where: { userCode: userCode } }).then(result => {
+    if (result) {
+      const Videoitems = result.map(e => {
+        let Switch = e.status === 1 ? true : false
+        if (e.status === 1) num++
+        const tempDate = moment(e.createdAt).format('YYYY-MM-DD HH:mm:ss')
+        return { id: e.id, url: e.url, title: e.title, deptName: e.deptName, userCode: e.userCode, category: e.category, Switch: Switch, createdDate: tempDate, clickNum: e.clickNum, cover: e.cover }
+      })
+      const pageList = Videoitems.filter((item, index) => index < limit * page && index >= limit * (page - 1))
+      res.json({ code: 200, msg: '获取视频列表成功', items: pageList, total: Videoitems.length, num: num })
+    } else {
+      res.json({ code: 201, msg: '获取视频列表失败' })
+    }
+  })
 })
 
 // 获取所有status=1的视频，在官网展示
-router.get('/getVideoListByStatus', async(req, res, next) => {
-    await Video(sequelize, DataTypes).findAll({ where: { status: 1 } }).then(result => {
-        if (result) {
-            const items = result.map(e => {
-                return { id: e.id, url: e.url, title: e.title, cover: e.cover }
-            })
-            res.json({ code: 200, items: items })
-        } else {
-            res.json({ code: 201, msg: '获取视频失败' })
-        }
-    })
+router.get('/getVideoListByStatus', async (req, res, next) => {
+  const { category, limit, page } = req.query
+  await Video(sequelize, DataTypes).findAll({ where: { status: 1, category: category} }).then(result => {
+    if (result) {
+      const items = result.map(e => {
+        return { id: e.id, url: e.url, title: e.title, cover: e.cover }
+      })
+      const pageList = items.filter((item, index) => index < limit * page && index >= limit * (page - 1))
+      res.json({ code: 200, items: pageList, total: items.length})
+    } else {
+      res.json({ code: 201, msg: '获取视频失败' })
+    }
+  })
 })
 
 // 更新视频状态
@@ -223,65 +225,66 @@ router.post('/deleteVideoById', async(req, res, next) => {
 
 // 获取学科荟萃信息
 router.get('/getSubjectAssembleList', async(req, res, next) => {
-    const { category, limit, page } = req.query
-    await News(sequelize, DataTypes).findAll({ where: { category: category, status: 'published' } }).then(result => {
-        if (result) {
-            const newsItems = result.map(e => {
-                return {
-                    id: e.id,
-                    deptName: e.deptName,
-                    title: e.title
-                }
-            })
-            const pageList = newsItems.filter((item, index) => index < limit * page && index >= limit * (page - 1))
-            res.json({ code: 200, items: pageList, total: newsItems.length })
-        } else {
-            res.json({ code: 201, msg: '获取数据失败' })
+  const { category, limit, page } = req.query
+  await News(sequelize, DataTypes).findAll({ where: { category: category, status: 'published' } }).then(result => {
+    if (result) {
+      const newsItems = result.map(e => {
+        return {
+          id: e.id,
+          deptName: e.deptName,
+          title: e.title
         }
-    })
+      })
+      const pageList = newsItems.filter((item, index) => index < limit * page && index >= limit * (page - 1))
+      res.json({ code: 200, items: pageList, total: newsItems.length })
+    } else {
+      res.json({ code: 201, msg: '获取数据失败' })
+    }
+  })
 })
 
 // 获取专家列表
 router.get('/getAllExpertList', async(req, res, next) => {
-    const { grade, page, limit } = req.query
-    await Doctor(sequelize, DataTypes).findAll({ where: { grade: grade } }).then(result => {
-        if (result) {
-            const doctorsItems = result.map(e => {
-                return {
-                    id: e.id,
-                    avatar: e.avatar,
-                    username: e.username,
-                    jobTitle: e.jobTitle,
-                    deptName: e.deptName
-                }
-            })
-            const pageList = doctorsItems.filter((item, index) => index < limit * page && index >= limit * (page - 1))
-            res.json({ code: 200, items: pageList, total: doctorsItems.length })
-        } else {
-            res.json({ code: 201, msg: '获取列表失败' })
-        }
-    })
+  const { grade, page, limit } = req.query
+  await Doctor(sequelize, DataTypes).findAll({ where: { grade: grade } }).then(result => {
+    if (result) {
+      const doctorsItems = result.map(e => {
+          return {
+            id: e.id,
+            avatar: e.avatar,
+            username: e.username,
+            jobTitle: e.jobTitle,
+            deptName: e.deptName
+          }
+      })
+      const pageList = doctorsItems.filter((item, index) => index < limit * page && index >= limit * (page - 1))
+      res.json({ code: 200, items: pageList, total: doctorsItems.length })
+    } else {
+      res.json({ code: 201, msg: '获取列表失败' })
+    }
+  })
 })
 
 // 根据id获取医生详细信息
 router.get('/getDoctorDetailById', async(req, res, next) => {
-    const { id } = req.query
-    await Doctor(sequelize, DataTypes).findOne({ where: { id: id } }).then(result => {
-        if (result) {
-            const item = {
-                username: result.username,
-                deptName: result.deptName,
-                avatar: result.avatar,
-                jobTitle: result.jobTitle,
-                education: result.education,
-                desc: result.desc,
-                email: result.email,
-                professional: result.professional
-            }
-            res.json({ code: 200, item: item })
-        } else {
-            res.json({ code: 201, msg: '获取信息失败' })
-        }
-    })
+  const { id } = req.query
+  await Doctor(sequelize, DataTypes).findOne({ where: { id: id } }).then(result => {
+    if (result) {
+      const item = {
+          username: result.username,
+          deptName: result.deptName,
+          avatar: result.avatar,
+          jobTitle: result.jobTitle,
+          education: result.education,
+          desc: result.desc,
+          email: result.email,
+          professional: result.professional
+      }
+      res.json({ code: 200, item: item })
+    } else {
+      res.json({ code: 201, msg: '获取信息失败' })
+    }
+  })
 })
+
 module.exports = router
