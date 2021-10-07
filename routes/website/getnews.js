@@ -9,7 +9,6 @@ moment.tz.setDefault('Asia/Shanghai')
     // 根据类别获取所对应的新闻列表
 router.get('/getAllNewsByCategory', async(req, res, next) => {
   const { category, limit, page } = req.query
-  console.log(req.query)
   await News(sequelize, DataTypes).findAll({ where: { category: category, status: 'published' } }).then(result => {
     if (result) {
       const items = result.map(e => {
