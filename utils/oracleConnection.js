@@ -7,4 +7,4 @@ const connection = oracledb.getConnection({
     connectString: '192.168.0.185:1521/ORCL'
 })
 
-exports.connection = connection;
+exports.Oracleconnection = connection;

@@ -13,6 +13,7 @@
     "docx-pdf": "0.0.1",
     "express": "~4.16.1",
     "http-errors": "~1.6.3",
+    "ibm_db": "^2.8.0",
     "jade": "~1.11.0",
     "jsonwebtoken": "^8.5.1",
     "mammoth": "^1.4.18",

@@ -5,7 +5,6 @@ const mysql = require('mysql')
 const Advice  = require('../../models/advice')
 const {DataTypes} = require('sequelize')
 const sequelize = require('../../database/connection')
-const dayjs = require('dayjs')
 //医疗收入情况表
 router.get('/medicalRevenue',(req,res,next)=>{
     const {role,start_date,end_date} = req.query

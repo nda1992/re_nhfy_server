@@ -1,7 +1,7 @@
 // 收入主题的路由
 const express = require('express')
 const router = express.Router()
-const { connection } = require('../../../utils/oracleConnection')
+const { Oracleconnection } = require('../../../utils/oracleConnection')
 
 // 门诊和住院各科室财务收入分类
 router.post('/kssrfl', async (req, res, next) => {
@@ -53,7 +53,7 @@ router.post('/kssrfl', async (req, res, next) => {
             )temp GROUP BY DEPT_NAME`
             break
         }
-    const result = (await connection).execute(sql)
+    const result = (await Oracleconnection).execute(sql)
     const items = (await result).rows
     const sum = Math.floor((items.map(v => v.总费用).reduce((cur, acc) => cur + acc)) * 100) / 100
     res.json({code:200,msg:'数据获取成功',items:items, sum: sum})
@@ -374,7 +374,7 @@ router.post('/deptMaterialMedicineDetail', async (req, res, next) => {
                 title = `${deptName}耗材明细`
         }
     }
-    const result = (await connection).execute(sql)
+    const result = (await Oracleconnection).execute(sql)
     const items = (await result).rows
     // 总金额
     const sum = Math.floor((items.map(v => v.总金额).reduce((cur, acc) => cur + acc)) * 100) / 100
@@ -632,7 +632,7 @@ router.post('/deptMaterialProportion', async (req, res, next) => {
             ) a left join basedata.YZHZB_PX c on a.科室=c.name
          group by 类别, 编码, 科室,c.xh) x
         order by x.类别,x.xh asc`
-    const result = (await connection).execute(sql)
+    const result = (await Oracleconnection).execute(sql)
     const items = (await result).rows
     const resultItems = []
     // 药品总费用
@@ -892,7 +892,7 @@ router.post('/deptMedicientProportion', async (req,res,next) => {
             ) a left join basedata.YZHZB_PX c on a.科室=c.name
          group by 类别, 编码, 科室,c.xh) x
         order by x.类别,x.xh asc`
-    const result = (await connection).execute(sql)
+    const result = (await Oracleconnection).execute(sql)
     const items = (await result).rows
     const resultItems = []
     // 药品总费用
