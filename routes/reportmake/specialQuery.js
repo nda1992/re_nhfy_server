@@ -1,6 +1,6 @@
 const express = require('express')
 const router = express.Router()
-const {connection} = require('../../utils/oracleConnection')
+const { Oracleconnection } = require('../../utils/oracleConnection')
 
 
 // 住院耗占比
@@ -129,7 +129,7 @@ router.post('/searchDeptOperate/getdeptMaterialProportion',async (req,res,next) 
                 ) temp GROUP BY 类别, 科室
             ) x order by x.类别,x.科室 asc`
 
-    const result = (await connection).execute(sql)
+    const result = (await Oracleconnection).execute(sql)
     const items = (await result).rows
     // hzb:耗占比
     const resultItems = []
@@ -387,7 +387,7 @@ router.post('/searchDeptOperate/getdeptMedicientProportion', async (req,res,next
             ) a left join basedata.YZHZB_PX c on a.科室=c.name
          group by 类别, 编码, 科室,c.xh) x
         order by x.类别,x.xh asc`
-    const result = (await connection).execute(sql)
+    const result = (await Oracleconnection).execute(sql)
     const items = (await result).rows
     const resultItems = []
     // 药品总费用
@@ -530,7 +530,7 @@ router.post('/searchDeptOperate/deptMaterialAmountTop20',async (req,res,next) =>
        ) where 耗材费用<>0 
     group by 类别,科室,项目名,耗材类型,单价) x where 排序<=20
     order by 类别,科室,排序 asc`
-    const result = (await connection).execute(sql)
+    const result = (await Oracleconnection).execute(sql)
     const items = (await result).rows
     if (page !== undefined || limit !== undefined) {
         const pageList = items.filter((item,index)=>index < limit * page && index >= limit * (page - 1))
@@ -643,7 +643,7 @@ router.post('/searchDeptOperate/deptMaterialSorted', async (req,res,next) => {
        ) where 耗材费用<>0 
     group by 类别,科室) x
     order by 金额 DESC`
-    const result = (await connection).execute(sql)
+    const result = (await Oracleconnection).execute(sql)
     const items = (await result).rows
     let sum = 0
     items.forEach(e => {
