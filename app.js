@@ -17,14 +17,14 @@ const employeeRouter = require('./routes/hospital/employee')
 const websitemanagerRouter = require('./routes/websitemanager/manager')
 const specialQueryRouter = require('./routes/reportmake/specialQuery')
 // 查询主题的相关路由
-const revenueRouter = require('./routes/QueryTheam/revenue/revenue')
-const operationRouter = require('./routes/QueryTheam/operation/operation')
-const rankRouter = require('./routes/QueryTheam/rank/rank')
-const othersRouter = require('./routes/QueryTheam/others/others')
-const basicRouter = require('./routes/QueryTheam/basic/basic')
-const bydeptRouter = require('./routes/QueryTheam/bydept/bydept')
-// 数据展示路由
-const visualizeRouter = require('./routes/Visualize/visualize')
+// const revenueRouter = require('./routes/QueryTheam/revenue/revenue')
+// const operationRouter = require('./routes/QueryTheam/operation/operation')
+// const rankRouter = require('./routes/QueryTheam/rank/rank')
+// const othersRouter = require('./routes/QueryTheam/others/others')
+// const basicRouter = require('./routes/QueryTheam/basic/basic')
+// const bydeptRouter = require('./routes/QueryTheam/bydept/bydept')
+// // 数据展示路由
+// const visualizeRouter = require('./routes/Visualize/visualize')
 const app = express();
 
 const { varifyToken } = require('./utils/token')
@@ -86,14 +86,14 @@ app.use('/reportmake', reportmakeRouter)
 app.use('/employee', employeeRouter)
 app.use('/websitemanager', websitemanagerRouter)
     // 主题查询的路由
-app.use('/reportmake/specialQuery', specialQueryRouter)
-app.use('/QueryTheam/operation', operationRouter)
-app.use('/QueryTheam/revenue', revenueRouter)
-app.use('/QueryTheam/rank', rankRouter)
-app.use('/QueryTheam/others', othersRouter)
-app.use('/QueryTheam/basic', basicRouter)
-app.use('/QueryTheam/bydept', bydeptRouter)
-app.use('/visualize', visualizeRouter)
+// app.use('/reportmake/specialQuery', specialQueryRouter)
+// app.use('/QueryTheam/operation', operationRouter)
+// app.use('/QueryTheam/revenue', revenueRouter)
+// app.use('/QueryTheam/rank', rankRouter)
+// app.use('/QueryTheam/others', othersRouter)
+// app.use('/QueryTheam/basic', basicRouter)
+// app.use('/QueryTheam/bydept', bydeptRouter)
+// app.use('/visualize', visualizeRouter)
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
     next(createError(404));

@@ -72,6 +72,9 @@ const DOCTOR_AVATAR_DOWNLOAD = 'http://localhost:3000/doctorsAvatar/'
 // 常用网站图片下载
 const USUALLY_WEBSITE_IMG_DOWNLOAD = 'http://localhost:3000/usuallywebsite/'
 
+// 背景音乐下载
+const BACKGROUND_MUSIC_DOWNLOAD = 'http://localhost:3000/music/music.mp3'
+
 module.exports = {
     BASE_URL,
     ADMIN_AVATAR_URL_UPLOAD,
@@ -95,5 +98,6 @@ module.exports = {
     WEBSITE_VIDEO_DOWNLOAD,
     VIDEO_COVER_DOWNLOAD,
     DOCTOR_AVATAR_DOWNLOAD,
-    USUALLY_WEBSITE_IMG_DOWNLOAD
+    USUALLY_WEBSITE_IMG_DOWNLOAD,
+    BACKGROUND_MUSIC_DOWNLOAD
 }
