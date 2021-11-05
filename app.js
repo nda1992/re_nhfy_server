@@ -17,9 +17,8 @@ const employeeRouter = require('./routes/hospital/employee')
 const websitemanagerRouter = require('./routes/websitemanager/manager')
 // 微信的路由
 const wechatRouter = require('./routes/wechat/wechat')
-const specialQueryRouter = require('./routes/reportmake/specialQuery')
-// 查询主题的相关路由
-<<<<<<< HEAD
+// const specialQueryRouter = require('./routes/reportmake/specialQuery')
+// // 查询主题的相关路由
 // const revenueRouter = require('./routes/QueryTheam/revenue/revenue')
 // const operationRouter = require('./routes/QueryTheam/operation/operation')
 // const rankRouter = require('./routes/QueryTheam/rank/rank')
@@ -28,18 +27,6 @@ const specialQueryRouter = require('./routes/reportmake/specialQuery')
 // const bydeptRouter = require('./routes/QueryTheam/bydept/bydept')
 // // 数据展示路由
 // const visualizeRouter = require('./routes/Visualize/visualize')
-=======
-const inpatientRouter = require('./routes/report/inpatient')
-const outpatientRouter = require('./routes/report/outpatient')
-const revenueRouter = require('./routes/QueryTheam/revenue/revenue')
-const operationRouter = require('./routes/QueryTheam/operation/operation')
-const rankRouter = require('./routes/QueryTheam/rank/rank')
-const othersRouter = require('./routes/QueryTheam/others/others')
-const basicRouter = require('./routes/QueryTheam/basic/basic')
-const bydeptRouter = require('./routes/QueryTheam/bydept/bydept')
-// 数据展示路由
-const visualizeRouter = require('./routes/Visualize/visualize')
->>>>>>> 973aceb03a2d4ce6a563bb6f8b5b92791f8ceea6
 const app = express();
 
 const { varifyToken } = require('./utils/token')
@@ -102,7 +89,6 @@ app.use('/employee', employeeRouter)
 app.use('/websitemanager', websitemanagerRouter)
 app.use('/wechat', wechatRouter)
     // 主题查询的路由
-<<<<<<< HEAD
 // app.use('/reportmake/specialQuery', specialQueryRouter)
 // app.use('/QueryTheam/operation', operationRouter)
 // app.use('/QueryTheam/revenue', revenueRouter)
@@ -111,18 +97,6 @@ app.use('/wechat', wechatRouter)
 // app.use('/QueryTheam/basic', basicRouter)
 // app.use('/QueryTheam/bydept', bydeptRouter)
 // app.use('/visualize', visualizeRouter)
-=======
-app.use('/report/inpatient', inpatientRouter)
-app.use('/report/outpatient', outpatientRouter)
-app.use('/reportmake/specialQuery', specialQueryRouter)
-app.use('/QueryTheam/operation', operationRouter)
-app.use('/QueryTheam/revenue', revenueRouter)
-app.use('/QueryTheam/rank', rankRouter)
-app.use('/QueryTheam/others', othersRouter)
-app.use('/QueryTheam/basic', basicRouter)
-app.use('/QueryTheam/bydept', bydeptRouter)
-app.use('/visualize', visualizeRouter)
->>>>>>> 973aceb03a2d4ce6a563bb6f8b5b92791f8ceea6
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
     next(createError(404));
