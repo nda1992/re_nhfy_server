@@ -17,7 +17,9 @@ module.exports = (sequelize, DataTypes) => {
     userCode: DataTypes.STRING,
     url: DataTypes.STRING,
     status: DataTypes.INTEGER,
-    websiteStatus: DataTypes.INTEGER
+    websiteStatus: DataTypes.INTEGER,
+    text: DataTypes.STRING,
+    newsid: DataTypes.INTEGER
   }, {
     sequelize,
     modelName: 'Swiper',
