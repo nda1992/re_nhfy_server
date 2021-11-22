@@ -57,7 +57,7 @@ app.all('*', (req, res, next) => {
 app.use((req, res, next) => {
     let url = req.url
         // 求职和官网的所有请求只匹配position/website开头
-    const UrlArr = ['/recruit/getPositionList', '/position/', '/users/searchDept', '/users/register', '/website', '/news/searchDept']
+    const UrlArr = ['/recruit/getPositionList', '/position/', '/users/searchDept', '/users/register', '/website', '/news/searchDept', '/news/searchRemoteNews']
     let trueUrl = -1
     for (let p of UrlArr) {
         if (url.search(p) !== -1) {

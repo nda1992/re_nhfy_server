@@ -186,7 +186,8 @@ const avatarStorage = multer.diskStorage({
 })
 const swiperUploader = multer({ storage: avatarStorage })
 router.post('/uploadSwiper', swiperUploader.array('file'), async(req, res, next) => {
-    const { userCode } = req.body
+    const { userCode, swiperText, newsid } = req.body
+    console.log(req.body.swiperText)
     const imgOrigin = SWIPER_IMAGES_URL_DOWNLOAD
     const files = req.files
     let temp = files.map(e => {
@@ -199,7 +200,7 @@ router.post('/uploadSwiper', swiperUploader.array('file'), async(req, res, next)
         })
         return { file: imgOrigin + newname }
     })
-    await Swiper(sequelize, DataTypes).create({ url: temp[0].file, userCode: userCode, status: 0, websiteStatus: 0 }).then(result => {
+    await Swiper(sequelize, DataTypes).create({ url: temp[0].file, userCode: userCode, status: 0, websiteStatus: 0, text: swiperText, newsid: newsid }).then(result => {
         if (result) {
             res.json({ code: 200, msg: '图片上传成功', file: result })
         } else {
@@ -221,7 +222,7 @@ router.get('/getAllSwiperImgs', async(req, res, next) => {
                 const createTemp = moment(e.createdAt).format('YYYY-MM-DD HH:mm:ss')
                 if (e.status === 1) num++
                     if (e.websiteStatus === 1) websiteNum++
-                        return { url: e.url, createdDate: createTemp, userCode: userCode, id: e.id, status: e.status, Switch: e.status === 1, websiteSwitch: e.websiteStatus === 1 }
+                        return { url: e.url, createdDate: createTemp, userCode: userCode, id: e.id, status: e.status, Switch: e.status === 1, websiteSwitch: e.websiteStatus === 1, text: e.text }
             })
             const pageList = resultTemp.filter((item, index) => index < limit * page && index >= limit * (page - 1))
             res.json({ code: 200, files: pageList, total: result.length, num: num, websiteNum: websiteNum })
