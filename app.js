@@ -30,8 +30,9 @@ const basicRouter = require('./routes/QueryTheam/basic/basic')
 const bydeptRouter = require('./routes/QueryTheam/bydept/bydept')
 // // 数据展示路由
 const visualizeRouter = require('./routes/Visualize/visualize')
+// OES系统数据库
+const dailyRouter = require('./routes/report/daily')
 const app = express();
-
 const { varifyToken } = require('./utils/token')
     // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -103,6 +104,8 @@ app.use('/QueryTheam/others', othersRouter)
 app.use('/QueryTheam/basic', basicRouter)
 app.use('/QueryTheam/bydept', bydeptRouter)
 app.use('/visualize', visualizeRouter)
+// OES系统数据库
+app.use('/daily', dailyRouter)
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
     next(createError(404));
