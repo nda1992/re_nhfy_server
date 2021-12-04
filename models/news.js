@@ -25,7 +25,8 @@ module.exports = (sequelize, DataTypes) => {
     type: DataTypes.INTEGER,
     clickNum: DataTypes.INTEGER,
     plateform: DataTypes.INTEGER,
-    loginuserCode: DataTypes.STRING
+    loginuserCode: DataTypes.STRING,
+    url: DataTypes.STRING // 保存文章封面图片的URL地址，上传的第一张图片为新闻封面
   }, {
     sequelize,
     modelName: 'News',

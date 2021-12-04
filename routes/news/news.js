@@ -103,7 +103,7 @@ router.get('/searchDept', async(req, res, next) => {
 
 // 发布文章
 router.post('/releaseNews', async(req, res, next) => {
-    const { id, author, status, title, content, display_time, platforms, category, deptName, type, role, newsStatus, loginuserCode, currentRoute } = req.body
+    const { id, author, status, title, content, display_time, platforms, category, deptName, type, role, newsStatus, loginuserCode, currentRoute, newsBackgroundUrl } = req.body
     if (role !== 'admin') {
         res.json({ code: 404, msg: "您没有权限发布新闻" })
     } else {
@@ -121,7 +121,7 @@ router.post('/releaseNews', async(req, res, next) => {
             // SQL的注释：如果status=publised,说明该条记录不是草稿，如果用户将不是草稿的记录保存为草稿，也需要创建一条新记录
             // 表示该条记录是草稿，则进行更新
             if (status === 'draft' && currentRoute !== '/news/release') { // 如果是从release页面过来，表示新创建一条草根
-                await News(sequelize, DataTypes).update({ title: title, content: content, userName: author, deptName: deptName, createTime: moment(display_time).format('YYYY-MM-DD HH:mm:ss'), category: category, clickNum: 0, status: 'draft', type: type, newsStatus: newsStatus, plateform: plateform, loginuserCode: loginuserCode }, { where: { id: id, status: status } }).then(result => {
+                await News(sequelize, DataTypes).update({ title: title, content: content, userName: author, deptName: deptName, createTime: moment(display_time).format('YYYY-MM-DD HH:mm:ss'), category: category, clickNum: 0, status: 'draft', type: type, newsStatus: newsStatus, plateform: plateform, loginuserCode: loginuserCode, url: newsBackgroundUrl }, { where: { id: id, status: status } }).then(result => {
                     if (result) {
                         res.json({ code: 200, msg: "草稿更新成功" })
                     } else {
@@ -129,7 +129,7 @@ router.post('/releaseNews', async(req, res, next) => {
                     }
                 })
             } else {
-                await News(sequelize, DataTypes).create({ title: title, content: content, userName: author, deptName: deptName, createTime: moment(display_time).format('YYYY-MM-DD HH:mm:ss'), category: category, clickNum: 0, status: 'draft', type: type, newsStatus: newsStatus, plateform: plateform, loginuserCode: loginuserCode }).then((result) => {
+                await News(sequelize, DataTypes).create({ title: title, content: content, userName: author, deptName: deptName, createTime: moment(display_time).format('YYYY-MM-DD HH:mm:ss'), category: category, clickNum: 0, status: 'draft', type: type, newsStatus: newsStatus, plateform: plateform, loginuserCode: loginuserCode, url: newsBackgroundUrl }).then((result) => {
                     if (result) {
                         res.json({ code: 200, msg: "草稿创建成功" })
                     } else {
@@ -142,7 +142,7 @@ router.post('/releaseNews', async(req, res, next) => {
             await News(sequelize, DataTypes).findOne({ where: { id: id } }).then(async item => {
                 //不存在，则创建新纪录
                 if (!item) {
-                    await News(sequelize, DataTypes).create({ title: title, content: content, userName: author, deptName: deptName, createTime: moment(display_time).format('YYYY-MM-DD HH:mm:ss'), category: category, clickNum: 0, status: status, type: type, newsStatus: newsStatus, plateform: plateform, loginuserCode: loginuserCode }).then((result) => {
+                    await News(sequelize, DataTypes).create({ title: title, content: content, userName: author, deptName: deptName, createTime: moment(display_time).format('YYYY-MM-DD HH:mm:ss'), category: category, clickNum: 0, status: status, type: type, newsStatus: newsStatus, plateform: plateform, loginuserCode: loginuserCode, url: newsBackgroundUrl }).then((result) => {
                         if (result) {
                             res.json({ code: 200, msg: "新闻提交成功，等待审核" })
                         } else {
@@ -151,7 +151,7 @@ router.post('/releaseNews', async(req, res, next) => {
                     })
                 } else {
                     //存在记录，则进行更新
-                    await News(sequelize, DataTypes).update({ title: title, content: content, userName: author, deptName: deptName, createTime: moment(display_time).format('YYYY-MM-DD HH:mm:ss'), category: category, clickNum: 0, status: status, type: type, newsStatus: newsStatus, plateform: plateform, loginuserCode: loginuserCode }, { where: { id: id } }).then(result => {
+                    await News(sequelize, DataTypes).update({ title: title, content: content, userName: author, deptName: deptName, createTime: moment(display_time).format('YYYY-MM-DD HH:mm:ss'), category: category, clickNum: 0, status: status, type: type, newsStatus: newsStatus, plateform: plateform, loginuserCode: loginuserCode, url: newsBackgroundUrl }, { where: { id: id } }).then(result => {
                         if (result) {
                             res.json({ code: 200, msg: "新闻提交成功，等待审核" })
                         } else {

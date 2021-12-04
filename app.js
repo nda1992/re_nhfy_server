@@ -17,6 +17,7 @@ const employeeRouter = require('./routes/hospital/employee')
 const websitemanagerRouter = require('./routes/websitemanager/manager')
 // 微信的路由
 const wechatRouter = require('./routes/wechat/wechat')
+const wechatNewsRouter = require('./routes/wechat/news')
 // const specialQueryRouter = require('./routes/reportmake/specialQuery')
 // // 查询主题的相关路由
 // const revenueRouter = require('./routes/QueryTheam/revenue/revenue')
@@ -88,6 +89,7 @@ app.use('/reportmake', reportmakeRouter)
 app.use('/employee', employeeRouter)
 app.use('/websitemanager', websitemanagerRouter)
 app.use('/wechat', wechatRouter)
+app.use('/wechat/news', wechatNewsRouter)
     // 主题查询的路由
 // app.use('/reportmake/specialQuery', specialQueryRouter)
 // app.use('/QueryTheam/operation', operationRouter)
