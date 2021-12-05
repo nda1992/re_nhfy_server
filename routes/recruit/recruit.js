@@ -187,7 +187,6 @@ const avatarStorage = multer.diskStorage({
 const swiperUploader = multer({ storage: avatarStorage })
 router.post('/uploadSwiper', swiperUploader.array('file'), async(req, res, next) => {
     const { userCode, swiperText, newsid } = req.body
-    console.log(req.body.swiperText)
     const imgOrigin = SWIPER_IMAGES_URL_DOWNLOAD
     const files = req.files
     let temp = files.map(e => {

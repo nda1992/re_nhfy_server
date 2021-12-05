@@ -2,6 +2,7 @@ const express = require('express')
 const router = express.Router()
 const { Oracleconnection } = require('../../utils/oracleConnection')
 
+// 门诊药品和耗材占比
 router.post('/getoutpatientMedicineMaterialProp', async (req, res, next) => {
     const { startDate, endDate } = req.body
     const start = startDate.concat(' 00:00:00')
@@ -61,6 +62,70 @@ router.post('/getoutpatientMedicineMaterialProp', async (req, res, next) => {
         }
     })
     res.json({ code:200, items:lists })
+})
+
+// 各科室门诊人均费用
+router.post('/getAvgRevenueByDept', async (req, res, next) => {
+    const { startDate, endDate } = req.body
+    const start = startDate.concat(' 00:00:00')
+    const end = endDate.concat(' 23:59:59')
+    let sql = `-- 门诊各科室人均费用排名
+    WITH T1 AS (
+    SELECT DEPT_NAME 科室名称,COUNT(*)总人次 FROM REG.REG_RECORD WHERE STATUS=0 AND pay_status>=1 AND is_delete='N' AND DEPT_ID NOT IN (186) AND
+    reg_date BETWEEN TO_DATE('${start}', 'yyyy-mm-dd hh24:mi:ss') AND TO_DATE('${end}', 'yyyy-mm-dd hh24:mi:ss')
+    GROUP BY DEPT_NAME
+    )
+    SELECT T1.科室名称,T1.总人次,T2.总费用,ROUND(DECODE(T2.总费用,0,0,(T2.总费用/T1.总人次)),2) 人均费用 FROM T1 FULL JOIN
+    (SELECT DEPT_NAME 科室名称,SUM(ACVALUE) 总费用 FROM CHG.CHG_OUTPATIENT_COST WHERE CHARGE_TIME BETWEEN TO_DATE('${start}','yyyy-MM-dd hh24:mi:ss') AND TO_DATE('${end}', 'yyyy-MM-dd hh24:mi:ss')
+    AND IS_DELETE='N' GROUP BY DEPT_NAME) T2 ON T1.科室名称=T2.科室名称 WHERE T1.科室名称 IS NOT NULL AND T1.总人次 IS NOT NULL AND T2.总费用 IS NOT NULL ORDER BY 人均费用 DESC`
+    const result = (await Oracleconnection).execute(sql)
+    const results = (await result).rows
+    let num = 1
+    let items = []
+    results.forEach(e => {
+        let temp =  {
+        序号: num,
+        科室名称:e.科室名称,
+        总人次: e.总人次,
+        总费用: Math.floor(e.总费用*100)/100,
+        人均费用: Math.floor(e.人均费用*100)/100
+        }
+        items.push(temp)
+        num++
+    });
+    res.json({code: 200, items: items})
+})
+
+router.post('/getAvgRevenueByDoctor', async (req, res, next) => {
+    const { startDate, endDate } = req.body
+    const start = startDate.concat(' 00:00:00')
+    const end = endDate.concat(' 23:59:59')
+    sql = `-- 门急诊医生人均费用
+    WITH T1 AS (
+    SELECT DOCTOR_NAME 开单医生,COUNT(*)总人次 FROM REG.REG_RECORD WHERE STATUS=0 AND pay_status>=1 AND is_delete='N' AND DEPT_ID NOT IN (186) AND
+    reg_date BETWEEN TO_DATE('${start}', 'yyyy-mm-dd hh24:mi:ss') AND TO_DATE('${end}', 'yyyy-mm-dd hh24:mi:ss')
+    GROUP BY DOCTOR_NAME
+    )
+    
+    SELECT T1.开单医生,T1.总人次,T2.总费用,ROUND(DECODE(T2.总费用,0,0,(T2.总费用/T1.总人次)),2) 人均费用 FROM T1 LEFT JOIN (
+    SELECT DOC_NAME 开单医生,SUM(ACVALUE) 总费用 FROM CHG.CHG_OUTPATIENT_COST WHERE CHARGE_TIME BETWEEN TO_DATE('${start}','yyyy-MM-dd hh24:mi:ss') AND TO_DATE('${end}', 'yyyy-MM-dd hh24:mi:ss') AND IS_DELETE='N' GROUP BY DOC_NAME
+    ) T2 ON T1.开单医生=T2.开单医生 WHERE T2.总费用 IS NOT NULL ORDER BY 人均费用 DESC`
+    const result = (await Oracleconnection).execute(sql)
+    const results = (await result).rows
+    let num = 1
+    let items = []
+    results.forEach(e => {
+        let temp =  {
+        序号: num,
+        开单医生:e.开单医生,
+        总人次: e.总人次,
+        总费用: Math.floor(e.总费用*100)/100,
+        人均费用: Math.floor(e.人均费用*100)/100
+        }
+        items.push(temp)
+        num++
+    });
+    res.json({code: 200, items: items})
 })
 
 module.exports = router

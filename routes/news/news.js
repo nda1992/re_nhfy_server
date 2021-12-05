@@ -196,7 +196,6 @@ router.get('/getDraftById', async(req, res, next) => {
 // 获取所有文章记录
 router.get('/getnewsList', async(req, res, next) => {
     const { role, limit, page } = req.query
-    console.log(req.query)
     if (role !== 'admin') {
         res.json({ code: 201, msg: "您没有权限访问该页面" })
     } else {

@@ -1,5 +1,5 @@
-# 对nhfy项目的server服务端代码进行重构，并添加了一些新功能♥
-### 技术栈🌈
+# 对后端端代码进行了重构，并添加了一些新功能
+### 技术栈🔧
 - node -v:14.15.1
 - 框架：Express
 - 数据库：MySQL
@@ -10,7 +10,6 @@
 - 对登录后的请求全部使用token认证（可使用jwt生成token。为了方便测试项目中只定义为token字符串）
 - 处理[前端项目](https://github.com/nda1992/re_nhfy_client.git)中涉及到的所有请求
 
-[前端项目](https://github.com/nda1992/re_nhfy_client.git)
 ### 数据库的配置(Linux环境下)🚴‍♀️
 **Step1**:数据库的文件：/myapp/database/re_nhfy.sql<br>
 **Step2**:初始化数据库
@@ -27,7 +26,7 @@ vim /re_nhfy_server/myapp/config/config.json
 ```
 **Step4**: 根据自己的mysql来配置dev、test、production三种环境的数据库数据库连接即可
 
-### 运行项目(启动服务端)
+### 运行项目(启动服务端)🐱‍🚀
 1. 直接在服务器上运行
 请安装好mysql和node这两个环境依赖
  ```shell
@@ -37,7 +36,7 @@ npm install
 npm install supervisor -g
 supervisor .\bin\www
  ```
- ### 在docker上运行（非常推荐）😍
+ ### 在docker上运行（推荐）😍
  **可以在Linux或Windows上安装docker，我这里是在Windows10上安装的docker，[Windows10上如何安装docker?](https://zhuanlan.zhihu.com/p/148511634)**<br>
  *进入到项目的目录下进行以下操作*
  1. 创建Dockerfile
@@ -107,7 +106,7 @@ networks:
 3. 创建镜像并启动容器
 ```
 docker-compose up -d --build
-``` 
+```
 4. 查看容器的运行情况
 ```
 docker-compose ps
@@ -123,4 +122,4 @@ docker logs container-name
 ```
 
 ## Warnings😥
-- 因为文件夹或变量太多了，一时想不到好的命名，很多文件或变量的定义不规范，请略过啊🤗......
+- 因为文件夹或变量太多了，一时想不到好的命名，很多文件或变量的定义不规范......

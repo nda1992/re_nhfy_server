@@ -306,7 +306,6 @@ router.post('/postPosition', async(req, res, next) => {
     const { positionId, jobSeekerId } = req.body
         // 判断收藏列表中是否已经存在了投递的岗位
     const isPosted = await get2CollectInstance.findOne({ where: { PositionId: positionId, jobSeekerId: jobSeekerId } })
-    console.log(isPosted)
         // status=1：已投递，未阅读;isPosted=true:表示已投递;confirm:是否确定参加笔试和面试，1=参加、0=不参加
     post2positionInstance.create({ jobSeekerId: jobSeekerId, PositionId: positionId, status: 1, isPosted: 1, confirm: 0 }).then(async result => {
         if (result) {
@@ -718,7 +717,6 @@ router.post('/removeAllSendMsg', async(req, res, next) => {
 // (不用token认证，求职者或官网可以访问所有的轮播图)获取轮播图到招聘系统中
 router.get('/getSwiperImgs2Run', async(req, res, next) => {
     const { swiperFlag } = req.query
-    console.log(typeof swiperFlag)
     switch (swiperFlag) {
         case 'recruit':
             await Swiper(sequelize, DataTypes).findAll({ where: { status: 1 } }).then((swiper) => {
@@ -748,7 +746,6 @@ router.post('/filterPositions', async(req, res, next) => {
     sql = `select * from positions where userCode<>0 `
     if (type !== '不限') {
         const tempType = type === '事业编' ? 1 : 2
-        console.log(tempType)
         sql += ` and type = ${tempType} `
     }
     if (english !== '不限') {
