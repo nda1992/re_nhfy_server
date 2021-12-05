@@ -15,7 +15,7 @@ router.get('/getnewsList', async(req, res, next) => {
       const result = await sequelize.query(sql)
       if(result) {
         const newsList = result[0].map(e => {
-            let send_dateTemp = moment(e.send_date).format('YYYY-MM-DD')
+            let send_dateTemp = moment(e.createTime).format('YYYY-MM-DD')
             return Object.assign({}, e, { createTime: send_dateTemp })
         })
         const pageList = newsList.filter((item, index) => index < limit * page && index >= limit * (page - 1))
